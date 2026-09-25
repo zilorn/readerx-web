@@ -204,15 +204,15 @@ export async function loadReleasePayload(): Promise<{
 export async function loadReleaseResponse(): Promise<ReleaseResponse> {
   try {
     const { release, fetchedAt, cached } = await loadReleasePayload();
-    const { resolvePlatformVariants } = await import("~/lib/release");
-    return {
-      ok: true,
-      release,
-      // 产物按平台 / 架构分好，客户端不用再实现一遍匹配规则
-      platforms: resolvePlatformVariants(release.assets, PLATFORMS),
-      cached,
-      fetchedAt,
-    };
+    const { resolvePlatformVariants, unmatchedAssets } = await import("~/lib/release");
+    // 产物按平台 / 架构分好，客户端不用再实现一遍匹配规则
+    const platforms = resolvePlatformVariants(release.assets, PLATFORMS);
+    const unmatched = unmatchedAssets(release.assets, PLATFORMS);
+    if (unmatched.length > 0) {
+      // 规则没跟上命名口径时不会报错，只会安静地少几份产物；留一条日志便于回头排查
+      console.warn(`[release] ${release.tag} 有 ${unmatched.length} 份产物没有匹配到任何平台规则：`, unmatched);
+    }
+    return { ok: true, release, platforms, unmatched, cached, fetchedAt };
   } catch (error) {
     return {
       ok: false,

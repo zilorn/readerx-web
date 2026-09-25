@@ -228,10 +228,17 @@ export default function Download() {
 
                 <Match when={ready()}>
                   {/*
-                    行内不再用结构性的条件渲染（Show）：每行始终是同一套节点，
-                    「推荐」「体积 / 本版本暂无」只切文案与样式。
-                    这样即使数据在服务端与客户端之间有任何时序差异，
-                    行的 DOM 结构也完全一致，不会出现水合对不上。
+                    每行始终是同一套节点，「体积 / 本版本暂无」只切文案；
+                    唯一会多一个节点的是推荐徽标 —— 它用 `<Show>` 真正地不渲染。
+
+                    这里**不能**用 `hidden` 类来控制显隐：徽标本身是 `inline-flex`，
+                    而 Tailwind 编译出来的顺序是 `.hidden{display:none}` 在前、
+                    `.inline-flex{display:inline-flex}` 在后，两者同权重，后者胜出 ——
+                    于是 `hidden` 永远不起作用，每份产物都挂上「推荐」（曾经就是这样）。
+                    要藏就得让节点不存在，或者用内联 `style` 这种一定赢的写法。
+
+                    「哪个产物算推荐」不在这里判断：`resolvePlatformVariants` 已经把它
+                    收敛成「一个平台最多一份、且必须有产物」，组件只管渲染。
                     下载按钮固定指 Release 页，有直链时再在 click 时跳直链。
                   */}
                   <For each={variants()}>
@@ -249,15 +256,12 @@ export default function Download() {
                               <span class="font-mono text-[0.9rem] font-semibold text-ink">
                                 {variant.label}
                               </span>
-                              <span
-                                class="inline-flex items-center gap-1 rounded-full bg-mint-100 px-2 py-0.5 text-[0.68rem] font-bold text-mint-800"
-                                classList={{
-                                  hidden: !(variant.recommended && variant.url),
-                                }}
-                              >
-                                <CheckIcon size={10} />
-                                {dict().download.recommended}
-                              </span>
+                              <Show when={variant.recommended}>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-mint-100 px-2 py-0.5 text-[0.68rem] font-bold text-mint-800">
+                                  <CheckIcon size={10} />
+                                  {dict().download.recommended}
+                                </span>
+                              </Show>
                               <span class="text-[0.78rem] font-medium text-ink-3">
                                 {variant.size ?? dict().download.missingSize}
                               </span>

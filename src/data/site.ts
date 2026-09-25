@@ -27,10 +27,21 @@ export const RELEASES_URL = `${REPO_URL}/releases`;
 /**
  * 平台与产物规则。
  *
- * 产物名沿用发布流水线的约定：
- * - Android：`readerx-<版本>-<abi>.apk`（注意 ABI 之间互相包含，靠 `none` 区分）
- * - Windows：`readerx_<版本>_x64-setup.exe` / `readerx_<版本>_arm64-setup.exe`
- * - Linux：`readerx_<版本>_amd64.AppImage` / `.deb`，以及 `readerx-<版本>-1.x86_64.rpm`
+ * 产物名由发布流水线决定，**换过一次口径**，所以规则里两套写法都要认：
+ *
+ * | 平台 | v0.2.0 及更早 | v0.2.1 起 |
+ * | --- | --- | --- |
+ * | Android | `readerx-<版本>-arm64-v8a.apk` | 同左（ABI 名由 Android 规定，未变） |
+ * | Windows | `readerx_<版本>_x64-setup.exe` / `_arm64-setup.exe` | `readerx-<版本>-windows-x86_64-setup.exe` / `-aarch64-setup.exe` |
+ * | Linux | `readerx_<版本>_amd64.AppImage` / `.deb`、`readerx-<版本>-1.x86_64.rpm` | `readerx-<版本>-linux-x86_64.AppImage` / `.deb` / `.rpm` |
+ *
+ * 这里踩过的坑，改规则前先看一眼：
+ * - `x86_64` **不包含**子串 `x64`（`x` 后面跟的是 `8`），所以 `x64` 与 `x86_64`
+ *   必须写成别名组，不能指望子串碰巧命中；
+ * - 同理 `aarch64` 与 `arm64` 谁也不包含谁；
+ * - 一旦某份产物谁都匹配不上，界面只会显示「本版本暂无」而不会报错 ——
+ *   所以 `GET /api/release` 会把没被认出来的产物列在 `unmatched` 里，
+ *   发新版后扫一眼接口就能发现规则需要跟着改。
  *
  * 版本号出现在文件名里，因此规则里**不能**写版本；只按架构关键字与扩展名匹配。
  * `label` 是界面上的技术标签（架构名 / 包格式），各语言一致，不翻译。
@@ -44,6 +55,7 @@ export const PLATFORMS: PlatformMeta[] = [
         id: "arm64-v8a",
         label: "arm64-v8a",
         recommended: true,
+        // Android 的 ABI 名由系统规定（arm64-v8a / armeabi-v7a / x86 / x86_64），没有第二套写法
         pattern: { ext: "apk", match: ["arm64-v8a"] },
       },
       {
@@ -71,12 +83,17 @@ export const PLATFORMS: PlatformMeta[] = [
         id: "win-x64",
         label: "x86_64",
         recommended: true,
-        pattern: { ext: "exe", match: ["x64"], none: ["arm64"] },
+        // 旧口径 `x64-setup.exe`、新口径 `x86_64-setup.exe`；ARM 的两种写法都要排掉
+        pattern: {
+          ext: "exe",
+          match: [["x64", "x86_64"]],
+          none: ["arm64", "aarch64"],
+        },
       },
       {
         id: "win-arm64",
         label: "aarch64",
-        pattern: { ext: "exe", match: ["arm64"] },
+        pattern: { ext: "exe", match: [["arm64", "aarch64"]] },
       },
     ],
   },
@@ -87,18 +104,18 @@ export const PLATFORMS: PlatformMeta[] = [
       {
         id: "appimage",
         label: "AppImage",
-        pattern: { ext: "appimage", match: ["amd64"] },
+        pattern: { ext: "appimage", match: [["amd64", "x86_64"]] },
       },
       {
         id: "deb",
         label: "deb",
         recommended: true,
-        pattern: { ext: "deb", match: ["amd64"] },
+        pattern: { ext: "deb", match: [["amd64", "x86_64"]] },
       },
       {
         id: "rpm",
         label: "rpm",
-        pattern: { ext: "rpm", match: ["x86_64"] },
+        pattern: { ext: "rpm", match: [["x86_64", "amd64"]] },
       },
     ],
   },
