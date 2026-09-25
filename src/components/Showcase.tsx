@@ -10,6 +10,7 @@ import {
   SourceListCard,
 } from "~/components/Mockups";
 import { ArrowRightIcon, CheckIcon, DevicesIcon } from "~/components/icons";
+import { handleAnchorNav } from "~/lib/scroll";
 
 type Row = {
   eyebrow: string;
@@ -210,6 +211,7 @@ export default function Showcase() {
 
                 <a
                   href="#download"
+                  onClick={handleAnchorNav}
                   class="group mt-8 inline-flex items-center gap-2 text-[0.95rem] font-semibold text-mint-700 transition-colors hover:text-mint-800"
                 >
                   选择你的平台下载

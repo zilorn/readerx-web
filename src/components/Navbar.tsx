@@ -2,7 +2,14 @@ import { For, createMemo, createSignal } from "solid-js";
 import { ArrowDownIcon, DownloadIcon, GitHubIcon } from "~/components/icons";
 import { LogoMark, Wordmark } from "~/components/Logo";
 import { NAV_LINKS, REPO_URL } from "~/data/site";
-import { useActiveSection, useHasHover, useScrollCollapsed, useScrollPast } from "~/lib/scroll";
+import {
+  handleAnchorNav,
+  scrollToTop,
+  useActiveSection,
+  useHasHover,
+  useScrollCollapsed,
+  useScrollPast,
+} from "~/lib/scroll";
 
 const SECTION_IDS = NAV_LINKS.map(link => link.href.slice(1));
 
@@ -45,7 +52,11 @@ export default function Navbar() {
     setKeyboardFocus(byKeyboard);
   };
 
-  /** 点导航时先清掉高亮，避免滚动动画期间两处同时点亮 */
+  /**
+   * 点导航时先清掉高亮，避免滚动动画期间两处同时点亮。
+   * 滚动本身由 `handleAnchorNav` 接手 —— 只靠 href 的话，
+   * 「地址里已经是同一个 hash」时点第二下不会有任何反应。
+   */
   const [clicked, setClicked] = createSignal<string | null>(null);
   const currentId = createMemo(() => clicked() ?? active());
 
@@ -58,9 +69,13 @@ export default function Navbar() {
     if (event.detail > 0) setPeekMuted(true);
   };
 
-  const handleNavClick = (id: string, event: MouseEvent) => {
+  const handleNavClick = (
+    id: string,
+    event: MouseEvent & { currentTarget: HTMLAnchorElement; target: Element },
+  ) => {
     setClicked(id);
     handleScrollNav(event);
+    handleAnchorNav(event);
     window.setTimeout(() => setClicked(null), 700);
   };
 
@@ -93,6 +108,7 @@ export default function Navbar() {
         {/* 标志：收起态只留图形 + X，鼠标悬停由整颗胶囊的展开来揭示全文 */}
         <a
           href="#top"
+          onClick={handleAnchorNav}
           class="flex shrink-0 items-center gap-2.5 rounded-2xl px-1.5 py-1.5 transition-colors hover:bg-mint-100/70"
           aria-label="ReaderX 首页"
         >
@@ -148,7 +164,7 @@ export default function Navbar() {
           {/* 回到顶部：滚过首屏后淡入 */}
           <button
             type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            onClick={scrollToTop}
             aria-label="回到顶部"
             class={[
               "hidden h-9 items-center justify-center rounded-full text-ink-2 transition-all hover:bg-mint-50 hover:text-mint-700 sm:flex",
@@ -170,7 +186,10 @@ export default function Navbar() {
 
           <a
             href="#download"
-            onClick={handleScrollNav}
+            onClick={event => {
+              handleScrollNav(event);
+              handleAnchorNav(event);
+            }}
             class="group flex items-center gap-1.5 rounded-full bg-mint-600 py-2 pl-3.5 pr-4 text-[0.9rem] font-semibold text-white shadow-[0_6px_18px_-6px_rgba(38,128,81,0.65)] transition-colors hover:bg-mint-700"
           >
             <DownloadIcon size={16} class="transition-transform group-hover:translate-y-px" />

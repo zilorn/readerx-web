@@ -3,6 +3,7 @@ import { LogoMark, Wordmark } from "~/components/Logo";
 import { ArrowRightIcon, GitHubIcon } from "~/components/icons";
 import { NAV_LINKS, REPO_URL } from "~/data/site";
 import { useVersion } from "~/lib/releaseClient";
+import { handleAnchorNav } from "~/lib/scroll";
 
 const DOC_LINKS = [
   {
@@ -53,6 +54,7 @@ export default function Footer() {
             <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
                 href="#download"
+                onClick={handleAnchorNav}
                 class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-[0.98rem] font-bold text-mint-800 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] transition-transform hover:-translate-y-0.5 sm:w-auto"
               >
                 下载
@@ -110,6 +112,7 @@ export default function Footer() {
                   <li>
                     <a
                       href={link.href}
+                      onClick={handleAnchorNav}
                       class="text-[0.9rem] text-ink-2 transition-colors hover:text-mint-700"
                     >
                       {link.label}

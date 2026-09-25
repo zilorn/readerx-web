@@ -1,5 +1,73 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
 
+/* ------------------------------------------------------------------ *
+ * 站内锚点跳转
+ * ------------------------------------------------------------------ */
+
+/**
+ * 清掉地址栏里的分区 hash。
+ * 用在「回到顶部」上：人都回到顶部了，URL 还写着 `#download` 的话，
+ * 刷新一次又会被送回下载分区。
+ */
+function clearHash() {
+  const { pathname, search, hash } = window.location;
+  if (hash) window.history.replaceState(window.history.state, "", pathname + search);
+}
+
+/** 回到页面顶部；滚动行为交给 CSS（正常平滑，降低动效偏好下立即到位） */
+export function scrollToTop() {
+  clearHash();
+  window.scrollTo({ top: 0 });
+}
+
+/**
+ * 站内锚点点击接管。
+ *
+ * 光靠 `href="#xxx"` 是不够的：点击会先被 SolidStart 路由在 document 上的
+ * 全局链接拦截接走，转成一次 navigate；而 navigate 在「目标地址与当前地址
+ * 完全一样」时会整段跳过（不改地址、也不调 scrollToHash）。浏览器对同 hash
+ * 的默认跳转同样不会重新滚动。结果就是在 `/#download` 上再点一次「下载」、
+ * 或者刷新后停在某个分区再点它的导航项，都毫无反应 —— 手机上尤其明显，
+ * 因为地址栏长期停在 `#download`。
+ *
+ * 所以这里自己接管左键单击：滚到目标分区，并把 hash 同步进地址栏。
+ * 目标是别的路由上的锚点（本页找不到该 id）时原样放行，交给路由处理。
+ *
+ * 让位高度与滚动方式都不在这里算：`html` 上有 `scroll-padding-top`，分区上
+ * 还有 `scroll-mt-*`，`scrollIntoView` 会一并考虑。
+ */
+export function handleAnchorNav(
+  event: MouseEvent & { currentTarget: HTMLAnchorElement; target: Element },
+) {
+  // 中键 / 带修饰键的点击保持浏览器原生行为（新标签页打开等）
+  if (event.defaultPrevented || event.button !== 0) return;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+  const href = event.currentTarget.getAttribute("href") ?? "";
+  if (!href.startsWith("#") || href.length < 2) return;
+
+  const id = href.slice(1);
+  const target = document.getElementById(id);
+  if (!target) return;
+
+  // 拦下这次点击：路由的全局拦截看到 defaultPrevented 就会跳过，
+  // 不会再走一遍「地址没变 → 什么也不做」的导航
+  event.preventDefault();
+
+  // 顶部不是「分区」，不留 hash
+  if (id === "top") {
+    scrollToTop();
+    return;
+  }
+
+  // 地址栏跟上；已经是同一个 hash 时不写历史，免得刷出一串同名记录
+  if (window.location.hash !== href) {
+    window.history.pushState(null, "", href);
+  }
+
+  target.scrollIntoView();
+}
+
 /**
  * 滚动方向驱动的收缩状态：向下滚动收起，向上滚动展开。
  *

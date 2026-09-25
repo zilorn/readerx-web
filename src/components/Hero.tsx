@@ -12,6 +12,7 @@ import {
 } from "~/components/icons";
 import { HERO_ROTATING_WORDS, REPO_URL } from "~/data/site";
 import { useVersion } from "~/lib/releaseClient";
+import { handleAnchorNav } from "~/lib/scroll";
 
 const PLATFORM_BADGES = [
   { label: "Android 7.0+", Icon: AndroidIcon },
@@ -78,6 +79,7 @@ export default function Hero() {
           >
             <a
               href="#download"
+              onClick={handleAnchorNav}
               class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-mint-600 px-7 py-3.5 text-[0.98rem] font-semibold text-white shadow-[0_10px_30px_-10px_rgba(38,128,81,0.75)] transition-all hover:-translate-y-0.5 hover:bg-mint-700 hover:shadow-[0_16px_36px_-12px_rgba(38,128,81,0.8)] sm:w-auto"
             >
               下载 ReaderX
