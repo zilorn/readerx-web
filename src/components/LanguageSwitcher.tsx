@@ -1,8 +1,9 @@
-import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
+import { For, Show, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
 import { CheckIcon, GlobeIcon } from "~/components/icons";
 import { useI18n } from "~/i18n";
 import { LOCALES, LOCALE_LABELS } from "~/i18n/locale";
+import { useAnchoredMenu } from "~/lib/anchoredMenu";
 
 /**
  * 语言切换。
@@ -14,19 +15,18 @@ import { LOCALES, LOCALE_LABELS } from "~/i18n/locale";
  * 菜单项用各自的母语写法（中文 / English），不跟着界面语言翻译 ——
  * 看不懂当前语言的人才最需要它。
  *
+ * **手机上（<sm）没有这颗地球**：窄屏的按钮位让给了分区菜单（`NavMenu.tsx`），
+ * 语言切换搬进那张浮层，页脚的那一排小胶囊也照旧可用 ——
+ * 窄屏同时放「分区 + 语言 + 下载」三颗按钮会把胶囊顶破。
+ *
  * **菜单为什么挂在 `document.body` 上**：导航胶囊要 `overflow-hidden` 才能做
  * 收起动画，而 `overflow: hidden` 会把浮层裁掉 —— 只露出贴着胶囊底边的一两个
  * 像素，用户看着「点了没反应」。用 `<Portal>` 把浮层挪到 body 下、改成
  * `position: fixed` 并按按钮位置算坐标，就完全不受胶囊的裁切与层叠上下文影响。
- * 代价是坐标得自己算：打开时量一次，窗口尺寸变化时再量（导航是 fixed 的，
- * 页面滚动不会让按钮移动）。
+ * 定位与关闭的细节在 `~/lib/anchoredMenu`，与分区菜单共用同一份实现。
  */
 
-/** 浮层与按钮之间的间距（px） */
-const GAP = 10;
-/** 浮层与视口边缘的最小间距（px） */
-const EDGE = 12;
-
+/** 导航栏里的语言菜单：一颗地球按钮 + 下拉浮层 */
 export function LanguageMenu(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,59 +34,26 @@ export function LanguageMenu(props: {
   collapsed?: boolean;
 }) {
   const { locale, setLocale, dict } = useI18n();
-  let root: HTMLDivElement | undefined;
-  let trigger: HTMLButtonElement | undefined;
-  let panel: HTMLDivElement | undefined;
-  const [anchor, setAnchor] = createSignal({ top: 0, right: EDGE });
+  const [root, setRoot] = createSignal<HTMLDivElement>();
+  const [trigger, setTrigger] = createSignal<HTMLButtonElement>();
+  const [panel, setPanel] = createSignal<HTMLDivElement>();
 
-  /** 把浮层对齐到按钮正下方、右缘对齐，同时不贴到屏幕边上 */
-  const anchorToTrigger = () => {
-    const box = trigger?.getBoundingClientRect();
-    if (!box || box.width === 0) return;
-    setAnchor({
-      top: Math.round(box.bottom + GAP),
-      right: Math.max(EDGE, Math.round(window.innerWidth - box.right)),
-    });
-  };
-
-  // 打开期间才挂监听：窗口尺寸变化要重新对位，「点外面 / Esc」要收起
-  createEffect(() => {
-    if (!props.open) return;
-
-    anchorToTrigger();
-
-    const onViewportChange = () => anchorToTrigger();
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      // 浮层在 body 下，不在 root 里，所以两处都要判
-      if (root?.contains(target) || panel?.contains(target)) return;
-      props.onOpenChange(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      props.onOpenChange(false);
-      trigger?.focus();
-    };
-
-    window.addEventListener("resize", onViewportChange);
-    window.addEventListener("orientationchange", onViewportChange);
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    onCleanup(() => {
-      window.removeEventListener("resize", onViewportChange);
-      window.removeEventListener("orientationchange", onViewportChange);
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    });
+  const anchor = useAnchoredMenu({
+    open: () => props.open,
+    onClose: () => props.onOpenChange(false),
+    root,
+    trigger,
+    panel,
   });
 
   return (
     <>
       <div
-        ref={root}
+        ref={setRoot}
         class={[
           "relative shrink-0 transition-all duration-300",
+          // 手机上这颗按钮让位给分区菜单，语言在那张浮层里
+          "hidden sm:block",
           // 收起时连 overflow 一起收起：按钮本体比容器宽，不裁会露在外面
           props.collapsed
             ? "pointer-events-none w-0 overflow-hidden opacity-0"
@@ -94,7 +61,7 @@ export function LanguageMenu(props: {
         ].join(" ")}
       >
         <button
-          ref={trigger}
+          ref={setTrigger}
           type="button"
           aria-haspopup="menu"
           aria-expanded={props.open}
@@ -115,7 +82,7 @@ export function LanguageMenu(props: {
       <Show when={props.open}>
         <Portal>
           <div
-            ref={panel}
+            ref={setPanel}
             role="menu"
             aria-label={dict().lang.menuLabel}
             style={{ top: `${anchor().top}px`, right: `${anchor().right}px` }}

@@ -2,6 +2,7 @@ import { For, createMemo, createSignal } from "solid-js";
 import { ArrowDownIcon, DownloadIcon, GitHubIcon } from "~/components/icons";
 import { LanguageMenu } from "~/components/LanguageSwitcher";
 import { LogoMark, Wordmark } from "~/components/Logo";
+import { NavMenu } from "~/components/NavMenu";
 import { NAV_LINKS, REPO_URL } from "~/data/site";
 import { useI18n } from "~/i18n";
 import {
@@ -17,12 +18,21 @@ const SECTION_IDS = NAV_LINKS.map(link => link.id);
 
 /**
  * 灵动岛式导航：悬浮玻璃胶囊。
- * 初始是展开态；向下滚动收起成一颗小结，向上滚动重新展开。
- * 收起状态下，鼠标悬停 / 键盘聚焦也能临时把它拉开（触屏没有 hover，靠上滑）。
+ * 初始是展开态；桌面端向下滚动收起成一颗小结，向上滚动重新展开。
+ * 收起状态下，鼠标悬停 / 键盘聚焦也能临时把它拉开。
+ *
+ * **触屏端不参与收起**（见下面 `collapsed` 里的 `hasHover()`）：收起后标志全称、
+ * 分区导航、语言按钮会一起淡出，而触屏没有 hover，只能靠重新上滑才能把胶囊拉回来 ——
+ * 手机上要保持「导航内容一眼看全」，所以整颗胶囊始终是展开态。
+ * 桌面端一切照旧。
+ *
+ * 分区导航有两种形态，断点共用 `lg`：宽屏是胶囊里平铺的 `<ul>`（`lg:flex`），
+ * 窄屏是 `NavMenu` 那颗三横线按钮 + 浮层（`lg:hidden`）—— 手机上也能进分区。
  *
  * 语言切换按钮属于「展开态」的内容（和分区导航、标志全称一起淡出）：
  * 收起后的小结只留最要紧的动作，宽度也刚好容得下 —— 首次访问的人是在页面
  * 顶部、胶囊展开时决定语言的。滚到底还能用页脚里的那一排语言胶囊。
+ * 手机上（<sm）这颗地球让位给分区菜单，语言切换在 `NavMenu` 的浮层里。
  */
 export default function Navbar() {
   const { dict } = useI18n();
@@ -39,12 +49,23 @@ export default function Navbar() {
   const [peekMuted, setPeekMuted] = createSignal(false);
   // 语言菜单开着时不许收起：菜单是跟着胶囊右边缘定位的，胶囊一缩菜单就跑了
   const [langOpen, setLangOpen] = createSignal(false);
+  // 窄屏的分区菜单同理：收起会把触发按钮本身一起淡出，浮层就成了孤儿
+  const [menuOpen, setMenuOpen] = createSignal(false);
 
   // 键盘聚焦只在有 hover 的桌面端才算「临时展开」，否则手机上点一下按钮就会把胶囊撑开
   const peeking = createMemo(
     () => !peekMuted() && (hovered() || (keyboardFocus() && hasHover())),
   );
-  const collapsed = createMemo(() => collapsedByScroll() && !peeking() && !langOpen());
+  /**
+   * 收起只在有 hover 的桌面端发生。
+   *
+   * 触屏端（`hasHover()` 为 false）恒为展开：收起后标志全称与语言按钮都会淡出，
+   * 而触屏没有 hover 可以把胶囊临时拉开 —— 唯一的补救是向上滑回顶部，
+   * 等于「导航条内容显示不全」。手机上不做收起，内容一次看全。
+   */
+  const collapsed = createMemo(
+    () => collapsedByScroll() && hasHover() && !peeking() && !langOpen() && !menuOpen(),
+  );
 
   const handleFocusIn = (event: FocusEvent) => {
     const target = event.target;
@@ -207,7 +228,16 @@ export default function Navbar() {
               <GitHubIcon size={18} />
             </a>
 
-            {/* 语言切换：中英互切，选择结果记在 Cookie 里 */}
+            {/* 窄屏分区导航：<lg 用这颗菜单，≥lg 换成上面平铺的列表 */}
+            <NavMenu
+              open={menuOpen()}
+              onOpenChange={setMenuOpen}
+              collapsed={collapsed()}
+              activeId={currentId()}
+              onNavigate={handleNavClick}
+            />
+
+            {/* 语言切换：中英互切，选择结果记在 Cookie 里（手机上在分区菜单里） */}
             <LanguageMenu
               open={langOpen()}
               onOpenChange={setLangOpen}

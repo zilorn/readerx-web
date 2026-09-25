@@ -290,6 +290,15 @@ export const GlobeIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** 分区导航菜单（窄屏的导航入口，三横线） */
+export const MenuIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 7h16" />
+    <path d="M4 12h16" />
+    <path d="M4 17h16" />
+  </Icon>
+);
+
 /** 内部链接 / 外部跳转箭头（右上） */
 export const ExternalIcon = (p: IconProps) => (
   <Icon {...p}>

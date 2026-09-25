@@ -38,6 +38,8 @@ export const zh = {
     backToTop: "回到顶部",
     source: "在 GitHub 上查看源码",
     download: "下载",
+    /** 窄屏（<lg）那颗分区菜单按钮的名称，同时用作浮层的无障碍名称 */
+    menuLabel: "分区导航",
     /** 锚点导航的分区名，键与 `NAV_LINKS` 里的 id 一一对应 */
     sections: {
       features: "功能",
@@ -490,6 +492,7 @@ export const en: Messages = {
     backToTop: "Back to top",
     source: "View the source on GitHub",
     download: "Download",
+    menuLabel: "Sections",
     sections: {
       features: "Features",
       showcase: "Screens",

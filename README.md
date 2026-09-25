@@ -21,11 +21,30 @@ ReaderX 的官方网站源码（SolidStart + Nitro，部署到 Cloudflare Worker
 
 ### 手动切换
 
-- 导航栏的地球按钮（下拉菜单，`src/components/LanguageSwitcher.tsx` 的 `LanguageMenu`）；
+- 导航栏的地球按钮（下拉菜单，`src/components/LanguageSwitcher.tsx` 的 `LanguageMenu`）——
+  手机上（`<sm`）这颗按钮让位给分区菜单，语言切换在 `NavMenu` 那张浮层里；
 - 页脚右下角的一排语言胶囊（同文件的 `LanguageInline`）—— 滚到底、导航栏收起后仍然可用。
 
 切换后立即生效（正文、`<html lang>`、标题、描述与分享卡片 meta 一起换），
 并把选择写进 Cookie，下一次请求服务端就直接按新语言渲染。
+
+## 导航栏的两种形态
+
+顶部那颗玻璃胶囊按宽度分成两段，断点共用 `lg`（1024px），同一件事只有一个形态可见：
+
+| 宽度 | 分区导航 | 语言 |
+| --- | --- | --- |
+| `≥lg` | 胶囊里平铺的五个链接（`Navbar.tsx` 的 `<ul>`，`lg:flex`） | 地球按钮 |
+| `<lg` | 三横线按钮 + 浮层（`NavMenu.tsx`，`lg:hidden`） | `sm`–`lg` 用地球按钮；`<sm`（手机）在浮层底部 |
+
+另外两条与手机有关的口径：
+
+- **触屏端不参与收起**：胶囊的灵动岛收起只在有 hover 的设备上发生
+  （`Navbar.tsx` 里 `collapsed` 带 `hasHover()` 守卫）。触屏没有 hover，
+  收起后标志全称、分区入口、语言按钮都会淡出且拉不回来，等于导航内容显示不全；
+- **浮层都挂在 `document.body` 下**：胶囊要 `overflow-hidden` 才能做收起动画，
+  挂里面会被裁掉。定位与「点外面 / Esc 关闭」的实现在 `src/lib/anchoredMenu.ts`，
+  语言菜单与分区菜单共用同一份。
 
 ### 文案放在哪
 

@@ -149,14 +149,24 @@ export function useScrollPast(threshold = 600) {
 /**
  * 监听各锚点分区的可见性，返回当前所在分区的 id。
  * 取「可见比例最大且在视口上半部分」的分区，滚到底部时直接判定为最后一个分区。
+ *
+ * 比例是**当场用 `getBoundingClientRect` 算的**，不是读 IntersectionObserver 给的
+ * `intersectionRatio`：那玩意儿只在跨过 `threshold` 时才更新一次，而手机上分区比
+ * 观测带高得多（一两千 px 的分区落在 820px 的视口里，比例长期在 0.15 以下、根本
+ * 碰不到下一个阈值），于是记录下来的比例会一直停在旧值 —— 人都滚到「书源」了，
+ * 导航还高亮着「界面」。observer 只留作「布局变了（图片加载、卡片展开）」的信号。
+ *
+ * 判定带与原来的 `rootMargin` 同一口径：顶部让开灵动岛 20%，底部收 35%。
  */
 export function useActiveSection(ids: readonly string[]) {
   const [active, setActive] = createSignal<string>("");
 
   onMount(() => {
-    const ratios = new Map<string, number>();
+    let frame = 0;
 
-    const pick = () => {
+    const measure = () => {
+      frame = 0;
+
       // 已滚到页面底部：直接高亮最后一个分区
       const atBottom =
         window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
@@ -165,10 +175,19 @@ export function useActiveSection(ids: readonly string[]) {
         return;
       }
 
+      const bandTop = window.innerHeight * 0.2;
+      const bandBottom = window.innerHeight * 0.65;
+
       let best = "";
       let bestRatio = 0;
       for (const id of ids) {
-        const ratio = ratios.get(id) ?? 0;
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const box = el.getBoundingClientRect();
+        const visible = Math.min(box.bottom, bandBottom) - Math.max(box.top, bandTop);
+        if (visible <= 0) continue;
+        // 除以分区自己的高度：长分区只有一截露在带子里时，不该压过整段都在带子里的短分区
+        const ratio = visible / box.height;
         if (ratio > bestRatio) {
           bestRatio = ratio;
           best = id;
@@ -177,33 +196,29 @@ export function useActiveSection(ids: readonly string[]) {
       setActive(bestRatio > 0 ? best : "");
     };
 
-    const observer = new IntersectionObserver(
-      entries => {
-        for (const entry of entries) {
-          ratios.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
-        }
-        pick();
-      },
-      {
-        // 顶部让开灵动岛，底部收一点，避免刚进入就被判定为当前分区
-        rootMargin: "-20% 0px -35% 0px",
-        threshold: [0, 0.15, 0.3, 0.5, 0.75, 1],
-      },
-    );
+    /** 滚动事件按帧合并，一帧内只量一次（每帧要读 5 个分区的几何） */
+    const onScroll = () => {
+      if (frame === 0) frame = requestAnimationFrame(measure);
+    };
 
-    const observed: Element[] = [];
+    // observer 不再用来取比例，只作为「分区高度变了」的触发器
+    const observer = new IntersectionObserver(() => measure(), {
+      rootMargin: "-20% 0px -35% 0px",
+      threshold: [0, 0.15, 0.3, 0.5, 0.75, 1],
+    });
     for (const id of ids) {
       const el = document.getElementById(id);
-      if (el) {
-        observer.observe(el);
-        observed.push(el);
-      }
+      if (el) observer.observe(el);
     }
 
-    window.addEventListener("scroll", pick, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    measure();
     onCleanup(() => {
+      if (frame !== 0) cancelAnimationFrame(frame);
       observer.disconnect();
-      window.removeEventListener("scroll", pick);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     });
   });
 
