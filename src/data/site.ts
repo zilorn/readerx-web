@@ -1,53 +1,35 @@
 /**
- * ReaderX 官网的站点常量与下载信息。
+ * ReaderX 官网的站点常量与平台口径。
  *
- * 发版后只需要改这里的 VERSION / RELEASE_TAG：
- * 下载直链按 GitHub Release 的资产命名规则拼出来，拼不到的资产（历史上
- * Linux / Windows 用过 Tauri 默认命名）会自动回落到 Release 页面。
+ * 这里**只放不随发版变化的内容**：仓库地址、平台的系统要求与安装提示、
+ * 以及「哪个产物属于哪个平台 / 架构」的识别规则。
+ *
+ * 版本号、体积、下载直链一概不写死 —— 它们由 `src/routes/api/release.ts`
+ * 在运行时从 GitHub Releases 拉取（见 `src/lib/release.ts` 的类型与格式化），
+ * 所以发新版之后官网刷一下就是最新数据，不需要改代码。
  */
+
+import type { PlatformMeta } from "~/lib/release";
 
 export const REPO = "zilorn/readerx";
 export const REPO_URL = `https://github.com/${REPO}`;
 export const ISSUES_URL = `${REPO_URL}/issues`;
 export const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
 
-/** 当前对外展示的版本（与仓库 package.json / tauri.conf.json 保持一致） */
-export const VERSION = "0.2.0";
-/** 对应的 git tag */
-export const RELEASE_TAG = `v${VERSION}`;
-/** Release 页面：所有下载的兜底入口 */
+/** Release 列表页：拿不到线上数据时的兜底入口 */
 export const RELEASES_URL = `${REPO_URL}/releases`;
-export const RELEASE_URL = `${REPO_URL}/releases/tag/${RELEASE_TAG}`;
 
-function asset(name: string) {
-  return `${REPO_URL}/releases/download/${RELEASE_TAG}/${name}`;
-}
-
-export type DownloadVariant = {
-  /** 架构 / 安装包类型的短标签 */
-  label: string;
-  /** 一句话说明这份产物适合谁 */
-  hint: string;
-  /** 直链；资产名对不上时为 undefined，走 RELEASES_URL */
-  url?: string;
-  /** 体积，便于用户预期下载量 */
-  size?: string;
-  recommended?: boolean;
-};
-
-export type DownloadPlatform = {
-  id: "android" | "windows" | "linux";
-  name: string;
-  /** 系统要求 */
-  requirement: string;
-  /** 平台整体说明 */
-  summary: string;
-  /** 安装提示 */
-  note: string;
-  variants: DownloadVariant[];
-};
-
-export const PLATFORMS: DownloadPlatform[] = [
+/**
+ * 平台与产物规则。
+ *
+ * 产物名沿用发布流水线的约定：
+ * - Android：`readerx-<版本>-<abi>.apk`（注意 ABI 之间互相包含，靠 `none` 区分）
+ * - Windows：`readerx_<版本>_x64-setup.exe` / `readerx_<版本>_arm64-setup.exe`
+ * - Linux：`readerx_<版本>_amd64.AppImage` / `.deb`，以及 `readerx-<版本>-1.x86_64.rpm`
+ *
+ * 版本号出现在文件名里，因此规则里**不能**写版本；只按架构关键字与扩展名匹配。
+ */
+export const PLATFORMS: PlatformMeta[] = [
   {
     id: "android",
     name: "Android",
@@ -58,27 +40,23 @@ export const PLATFORMS: DownloadPlatform[] = [
       {
         label: "arm64-v8a",
         hint: "近几年的主流手机 / 平板（64 位）",
-        url: asset(`readerx-${VERSION}-arm64-v8a.apk`),
-        size: "22.2 MB",
         recommended: true,
+        pattern: { ext: "apk", match: ["arm64-v8a"] },
       },
       {
         label: "armeabi-v7a",
         hint: "仅支持 32 位应用的老设备",
-        url: asset(`readerx-${VERSION}-armeabi-v7a.apk`),
-        size: "16.2 MB",
+        pattern: { ext: "apk", match: ["armeabi-v7a"] },
       },
       {
         label: "x86_64",
         hint: "Android 模拟器（64 位镜像）",
-        url: asset(`readerx-${VERSION}-x86_64.apk`),
-        size: "24.7 MB",
+        pattern: { ext: "apk", match: ["x86_64"] },
       },
       {
         label: "x86",
         hint: "Android 模拟器（32 位镜像）",
-        url: asset(`readerx-${VERSION}-x86.apk`),
-        size: "25.1 MB",
+        pattern: { ext: "apk", match: ["x86"], none: ["x86_64"] },
       },
     ],
   },
@@ -92,16 +70,13 @@ export const PLATFORMS: DownloadPlatform[] = [
       {
         label: "x86_64",
         hint: "Intel / AMD 处理器",
-        // 0.2.0 的 Windows 产物仍是 Tauri 默认命名
-        url: asset(`readerx_${VERSION}_x64-setup.exe`),
-        size: "7.7 MB",
         recommended: true,
+        pattern: { ext: "exe", match: ["x64"], none: ["arm64"] },
       },
       {
         label: "aarch64",
         hint: "骁龙 X 等 ARM 笔记本",
-        url: asset(`readerx_${VERSION}_arm64-setup.exe`),
-        size: "6.8 MB",
+        pattern: { ext: "exe", match: ["arm64"] },
       },
     ],
   },
@@ -115,21 +90,18 @@ export const PLATFORMS: DownloadPlatform[] = [
       {
         label: "AppImage",
         hint: "免安装，chmod +x 后直接运行",
-        url: asset(`readerx_${VERSION}_amd64.AppImage`),
-        size: "84.5 MB",
+        pattern: { ext: "appimage", match: ["amd64"] },
       },
       {
         label: "deb",
         hint: "Debian / Ubuntu 系：sudo apt install ./xxx.deb",
-        url: asset(`readerx_${VERSION}_amd64.deb`),
-        size: "10.7 MB",
         recommended: true,
+        pattern: { ext: "deb", match: ["amd64"] },
       },
       {
         label: "rpm",
         hint: "Fedora / openSUSE 系：sudo dnf install ./xxx.rpm",
-        url: asset(`readerx-${VERSION}-1.x86_64.rpm`),
-        size: "10.7 MB",
+        pattern: { ext: "rpm", match: ["x86_64"] },
       },
     ],
   },

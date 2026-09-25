@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import Typewriter from "~/components/Typewriter";
 import { DesktopWindow, PhoneReader, PhoneShelf } from "~/components/Mockups";
 import {
@@ -10,7 +10,8 @@ import {
   StarIcon,
   WindowsIcon,
 } from "~/components/icons";
-import { HERO_ROTATING_WORDS, REPO_URL, VERSION } from "~/data/site";
+import { HERO_ROTATING_WORDS, REPO_URL } from "~/data/site";
+import { useVersion } from "~/lib/releaseClient";
 
 const PLATFORM_BADGES = [
   { label: "Android 7.0+", Icon: AndroidIcon },
@@ -19,6 +20,8 @@ const PLATFORM_BADGES = [
 ];
 
 export default function Hero() {
+  const version = useVersion();
+
   return (
     <section id="top" class="relative overflow-hidden pt-28 sm:pt-32 lg:pt-36">
       {/* 背景：浅绿光晕 + 细网格 */}
@@ -34,7 +37,9 @@ export default function Hero() {
           >
             <span class="flex items-center gap-1 rounded-full bg-mint-600 py-0.5 pl-2 pr-2.5 text-[0.7rem] font-bold tracking-wide text-white">
               <StarIcon size={11} />
-              v{VERSION}
+              <Show when={version()} fallback="最新版">
+                {value => <>v{value()}</>}
+              </Show>
             </span>
             <span class="font-medium text-ink-2">
               已在 <span class="text-ink">Android · Windows · Linux</span> 上可用
@@ -130,13 +135,12 @@ export default function Hero() {
           <div class="relative">
             <DesktopWindow class="mx-auto max-w-3xl" />
 
-            <div class="pointer-events-none absolute -bottom-10 left-0 hidden lg:block xl:-left-6">
-              <PhoneShelf class="w-[15.5rem] animate-float" />
+            {/* 两台手机叠在窗口两侧下方：留出边距，避免在 1024–1440px 之间叠在一起 */}
+            <div class="pointer-events-none absolute -bottom-6 left-0 hidden lg:block xl:-left-8">
+              <PhoneShelf class="w-[13rem] animate-float xl:w-[14.5rem]" />
             </div>
-            <div
-              class="pointer-events-none absolute -bottom-14 right-0 hidden animate-float [animation-delay:1.6s] lg:block xl:-right-6"
-            >
-              <PhoneReader class="w-[15.5rem]" />
+            <div class="pointer-events-none absolute -bottom-8 right-0 hidden animate-float [animation-delay:1.6s] lg:block xl:-right-8">
+              <PhoneReader class="w-[13rem] xl:w-[14.5rem]" />
             </div>
 
             {/* 移动端只展示一台手机，避免叠成一团 */}

@@ -3,9 +3,11 @@ import Reveal from "~/components/Reveal";
 import SectionHeading from "~/components/SectionHeading";
 import {
   DesktopWindow,
+  PhoneDiscover,
   PhoneReader,
   PhoneShelf,
-  SourceCodeCard,
+  PhoneSettings,
+  SourceListCard,
 } from "~/components/Mockups";
 import { ArrowRightIcon, CheckIcon, DevicesIcon } from "~/components/icons";
 
@@ -29,34 +31,63 @@ const ROWS: Row[] = [
     eyebrow: "书架",
     title: "打开就是接着读",
     description:
-      "本地书籍网格、继续阅读进度、最近添加一眼看到底。导入不跳页：书架上的 + 直接选文件，解析完立刻出现在书架上。",
-    bullets: ["阅读进度跨页同步", "书籍删除与归类管理", "空状态引导导入"],
-    visual: () => <PhoneShelf class="w-[16rem] sm:w-[17.5rem]" />,
+      "书架就是一格一格的封面：每本书下面直接写着读到百分之几，读完的标绿。导入不跳页 —— 页头右上角的 + 直接选文件，解析完立刻出现在书架上。",
+    bullets: [
+      "封面网格按窗口宽度自动决定每行几本",
+      "本地 / WebDAV / 在线来源与自定义分组筛选",
+      "长按进多选，批量移动分组或删除",
+    ],
+    visual: () => <PhoneShelf class="w-[15.5rem] sm:w-[17rem]" />,
   },
   {
     eyebrow: "阅读 + 听书",
     title: "眼睛累了就换耳朵",
     description:
-      "三种主题、可调字号，目录抽屉与书签随手可用。点耳机进入听书：原生系统语音或自定义 HTTP 语音源，正在朗读的句子在正文中实时橙色高亮。",
+      "正文默认 24px、行高 1.95，浅色 / 深色 / 护眼三套主题随处可切。点顶栏耳机进入听书：原生系统语音或自定义 HTTP 语音源，正在朗读的句子在正文里实时橙色高亮。",
     bullets: [
       "每章先读章节标题，跨章连续朗读",
-      "悬浮球控制暂停 / 上一句 / 下一句",
+      "右下角悬浮球控制暂停 / 上一句 / 下一句",
       "1x–3x 倍速、音色、定时停止",
     ],
-    visual: () => <PhoneReader class="w-[16rem] sm:w-[17.5rem]" />,
+    visual: () => <PhoneReader class="w-[15.5rem] sm:w-[17rem]" />,
     flip: true,
+  },
+  {
+    eyebrow: "发现",
+    title: "一个关键词，所有书源一起找",
+    description:
+      "搜索与发现两种模式共用同一份书源。输入书名或作者，多个书源并发去查，结果按来源并列出来，点一条就能看详情、加书架或直接开始读。",
+    bullets: [
+      "书源并发数可调，搜索过程实时显示进度",
+      "「发现」模式按书源自己的分类浏览",
+      "书源可以分组，只让指定分组参与搜索",
+    ],
+    visual: () => <PhoneDiscover class="w-[15.5rem] sm:w-[17rem]" />,
   },
   {
     eyebrow: "书源",
     title: "规则写在 JS 里，跑在沙箱里",
     description:
-      "书源定义 searchBook / discoverBooks / bookToc / bookContent 等入口函数，运行于 Rust 内嵌的 Boa 引擎沙箱，支持 async/await，另有独立二进制可以不启动应用直接跑规则。",
+      "书源定义 searchBook / discoverBooks / bookToc / bookContent 等入口函数，运行于 Rust 内嵌的 Boa 引擎沙箱，支持 async/await。每个书源可以单独开关搜索、发现、详情、目录、正文。",
     bullets: [
       "保存即生效，无需重启软件",
-      "每个书源可单独开关搜索 / 发现 / 详情 / 目录 / 正文",
+      "搜索、发现、详情、目录、正文逐项开关",
       "分组管理、长按多选、批量启停与 JSON 导入导出",
     ],
-    visual: () => <SourceCodeCard class="w-full" />,
+    visual: () => <SourceListCard class="w-full" />,
+  },
+  {
+    eyebrow: "设置",
+    title: "该在设置的都在设置里",
+    description:
+      "主题、正文字号、段落间距、翻页方式、简繁转换、书源并发，加上 WebDAV 备份、缓存管理与应用日志导出 —— 一个设置页放完，不需要翻二级菜单。",
+    bullets: [
+      "主题与阅读排版改动实时生效",
+      "WebDAV 备份 / 恢复，换机不丢进度",
+      "应用日志可一键导出，反馈问题时附上",
+    ],
+    visual: () => <PhoneSettings class="w-[15.5rem] sm:w-[17rem]" />,
+    flip: true,
   },
 ];
 
@@ -85,10 +116,10 @@ export default function Showcase() {
         <Reveal>
           <SectionHeading
             eyebrow="界面"
-            title="三个页面，"
-            titleAccent={() => <span class="text-gradient-mint">覆盖整条阅读链路</span>}
+            title="每一屏，"
+            titleAccent={() => <span class="text-gradient-mint">都是它在真机上的样子</span>}
             description={() =>
-              "找书、读书、听书。每一处交互都在真机上调过：底部 Tab、抽屉、悬浮球、长按多选。"
+              "书架、阅读、发现、书源、设置 —— 下面这些示意图按应用的界面口径绘制：同样的配色与强调色、同样的底部 Tab、同样的悬浮球。"
             }
           />
         </Reveal>

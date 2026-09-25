@@ -2,8 +2,11 @@ import { createUniqueId, type JSX } from "solid-js";
 
 /**
  * ReaderX 标志。
- * 图形沿用 App 内的图标（打开的书 + 圆角底），配色改成官网的浅绿主色，
- * 用内联 SVG 保证任意尺寸都清晰、且不产生额外请求。
+ *
+ * 图形与配色**与应用图标逐像素一致**（`readerx/src-tauri/icons/icon.png`）：
+ * 橙色对角渐变底（#f76707 → #c2410c）+ 白色打开的书，圆角 14/64。
+ * `public/favicon.svg` 与应用仓库里的那份是同一个文件、`favicon.ico` 也由真实图标转出，
+ * 因此浏览器标签页、页面标志与桌面 / 手机上的应用图标是同一个图形。
  */
 export type LogoMarkProps = {
   /** 边长（正方形），默认 32 */
@@ -29,11 +32,11 @@ export function LogoMark(props: LogoMarkProps) {
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#5cc98d" />
-          <stop offset="1" stop-color="#268051" />
+          <stop offset="0" stop-color="#f76707" />
+          <stop offset="1" stop-color="#c2410c" />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx="16" fill={`url(#${gradientId})`} />
+      <rect width="64" height="64" rx="14" fill={`url(#${gradientId})`} />
       <g transform="translate(20 20)">
         <path
           d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"
@@ -56,14 +59,14 @@ export function LogoMark(props: LogoMarkProps) {
   );
 }
 
-/** 文字标志：Reader + 浅绿的 X */
+/** 文字标志：与应用侧边栏一致，纯深色「ReaderX」（应用里不会把 X 单独染色） */
 export function Wordmark(props: { class?: string; fontSize?: number }): JSX.Element {
   return (
     <span
       class={`font-bold tracking-tight text-ink ${props.class ?? ""}`}
       style={props.fontSize ? { "font-size": `${props.fontSize}px` } : undefined}
     >
-      Reader<span class="text-mint-600">X</span>
+      ReaderX
     </span>
   );
 }

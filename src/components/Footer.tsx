@@ -1,7 +1,8 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import { LogoMark, Wordmark } from "~/components/Logo";
 import { ArrowRightIcon, GitHubIcon } from "~/components/icons";
-import { NAV_LINKS, REPO_URL, VERSION } from "~/data/site";
+import { NAV_LINKS, REPO_URL } from "~/data/site";
+import { useVersion } from "~/lib/releaseClient";
 
 const DOC_LINKS = [
   {
@@ -27,6 +28,8 @@ const DOC_LINKS = [
 ];
 
 export default function Footer() {
+  const version = useVersion();
+
   return (
     <footer class="relative mt-8 overflow-hidden border-t border-ink/8 bg-gradient-to-b from-white to-mint-50">
       {/* 下载引导 */}
@@ -52,7 +55,10 @@ export default function Footer() {
                 href="#download"
                 class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-[0.98rem] font-bold text-mint-800 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] transition-transform hover:-translate-y-0.5 sm:w-auto"
               >
-                下载 v{VERSION}
+                下载
+                <Show when={version()}>
+                  {value => <>v{value()}</>}
+                </Show>
                 <ArrowRightIcon size={18} class="transition-transform group-hover:translate-x-1" />
               </a>
               <a
@@ -83,7 +89,9 @@ export default function Footer() {
             </p>
             <div class="mt-5 flex flex-wrap items-center gap-2">
               <span class="rounded-full bg-white px-3 py-1 text-[0.75rem] font-semibold text-mint-800 ring-1 ring-mint-100">
-                v{VERSION}
+                <Show when={version()} fallback="最新版">
+                  {value => <>v{value()}</>}
+                </Show>
               </span>
               <span class="rounded-full bg-white px-3 py-1 text-[0.75rem] font-medium text-ink-2 ring-1 ring-ink/8">
                 Android · Windows · Linux
