@@ -1,19 +1,67 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
 
 /**
- * 当前滚动距离（px）。SSR 阶段恒为 0，客户端挂载后才开始监听。
+ * 滚动方向驱动的收缩状态：向下滚动收起，向上滚动展开。
+ *
+ * 判定用的是「同一方向上的累计位移」而不是瞬时方向：
+ * 向下累计超过 `down` 才收起，向上累计超过 `up` 才展开。两次状态切换后
+ * 计数清零，所以轻微回弹、触控板的抖动都不会让导航反复开合。
+ * 另外靠近顶部（`top` 以内）恒为展开，避免刚离开顶部就缩成一颗小结。
+ *
+ * SSR 阶段恒为 false，客户端挂载后才开始监听。
  */
-export function useScrolled(threshold = 16) {
-  const [scrolled, setScrolled] = createSignal(false);
+export function useScrollCollapsed(options: { down?: number; up?: number; top?: number } = {}) {
+  const down = options.down ?? 80;
+  const up = options.up ?? 24;
+  const top = options.top ?? 8;
+
+  const [collapsed, setCollapsed] = createSignal(false);
 
   onMount(() => {
-    const onScroll = () => setScrolled(window.scrollY > threshold);
+    let last = Math.max(0, window.scrollY);
+    // 正数表示当前累计向下，负数表示累计向上
+    let travel = 0;
+    let frame = 0;
+
+    const measure = () => {
+      frame = 0;
+
+      const y = Math.max(0, window.scrollY);
+      const delta = y - last;
+      last = y;
+
+      if (y <= top) {
+        travel = 0;
+        setCollapsed(false);
+        return;
+      }
+      if (delta === 0) return;
+
+      travel = delta > 0 ? Math.max(0, travel) + delta : Math.min(0, travel) + delta;
+
+      if (travel >= down) {
+        travel = 0;
+        setCollapsed(true);
+      } else if (travel <= -up) {
+        travel = 0;
+        setCollapsed(false);
+      }
+    };
+
+    const onScroll = () => {
+      // 滚动事件按帧合并，一帧内只测量一次
+      if (frame === 0) frame = requestAnimationFrame(measure);
+    };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    onCleanup(() => window.removeEventListener("scroll", onScroll));
+    onCleanup(() => {
+      if (frame !== 0) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    });
   });
 
-  return scrolled;
+  return collapsed;
 }
 
 /** 页面是否已经滚过某个高度 */
