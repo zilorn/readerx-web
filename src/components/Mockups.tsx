@@ -89,11 +89,15 @@ function PhoneFrame(props: { children: any; class?: string }) {
           <span class="flex items-center gap-1">
             <span
               class="inline-block h-1.5 w-2.5 rounded-[2px] border"
-              style={{ "border-color": `color-mix(in srgb, ${INK_2} 60%, transparent)` }}
+              style={{
+                "border-color": `color-mix(in srgb, ${INK_2} 60%, transparent)`,
+              }}
             />
             <span
               class="inline-block h-1.5 w-1.5 rounded-full"
-              style={{ background: `color-mix(in srgb, ${INK_2} 50%, transparent)` }}
+              style={{
+                background: `color-mix(in srgb, ${INK_2} 50%, transparent)`,
+              }}
             />
           </span>
         </div>
@@ -195,11 +199,17 @@ function AppHeader(props: {
     >
       <div class="flex items-center justify-between gap-2 px-3.5 pb-1 pt-1.5">
         <div class="flex min-w-0 flex-1 items-baseline gap-1.5">
-          <h1 class="text-[13px] font-bold tracking-[0.02em]" style={{ color: INK }}>
+          <h1
+            class="text-[13px] font-bold tracking-[0.02em]"
+            style={{ color: INK }}
+          >
             {props.title}
           </h1>
           <Show when={props.subtitle}>
-            <span class="whitespace-nowrap text-[7.5px]" style={{ color: INK_3 }}>
+            <span
+              class="whitespace-nowrap text-[7.5px]"
+              style={{ color: INK_3 }}
+            >
               {props.subtitle}
             </span>
           </Show>
@@ -238,7 +248,7 @@ function TabBar(props: { active: "shelf" | "discover" | "settings" }) {
       aria-label="主导航"
     >
       <For each={items}>
-        {item => (
+        {(item) => (
           <span class="flex flex-1 flex-col items-center gap-[1px] pb-0.5 pt-1">
             <span
               class="leading-none"
@@ -308,14 +318,62 @@ function ShelfPane() {
 
       {/* 封面网格：96px 轨道自动填充，这里按手机列宽排成 4 列 */}
       <div class="grid flex-1 grid-cols-4 content-start gap-x-2 gap-y-3 overflow-hidden px-3.5 pt-2">
-        <BookCover hue={142} format="TXT" bars={[66, 44, 32]} showMeta percent={64} />
-        <BookCover hue={210} format="EPUB" bars={[46, 60, 26]} showMeta percent={12} />
-        <BookCover hue={32} format="TXT" bars={[72, 38, 34]} showMeta finished />
-        <BookCover hue={336} format="EPUB" bars={[54, 42, 28]} showMeta percent={38} />
-        <BookCover hue={178} format="PDF" bars={[62, 36, 24]} showMeta percent={7} />
-        <BookCover hue={258} format="TXT" bars={[42, 58, 30]} showMeta percent={55} />
-        <BookCover hue={96} format="在线" bars={[68, 50, 36]} showMeta percent={23} />
-        <BookCover hue={12} format="TXT" bars={[48, 64, 26]} showMeta percent={81} />
+        <BookCover
+          hue={142}
+          format="TXT"
+          bars={[66, 44, 32]}
+          showMeta
+          percent={64}
+        />
+        <BookCover
+          hue={210}
+          format="EPUB"
+          bars={[46, 60, 26]}
+          showMeta
+          percent={12}
+        />
+        <BookCover
+          hue={32}
+          format="TXT"
+          bars={[72, 38, 34]}
+          showMeta
+          finished
+        />
+        <BookCover
+          hue={336}
+          format="EPUB"
+          bars={[54, 42, 28]}
+          showMeta
+          percent={38}
+        />
+        <BookCover
+          hue={178}
+          format="PDF"
+          bars={[62, 36, 24]}
+          showMeta
+          percent={7}
+        />
+        <BookCover
+          hue={258}
+          format="TXT"
+          bars={[42, 58, 30]}
+          showMeta
+          percent={55}
+        />
+        <BookCover
+          hue={96}
+          format="在线"
+          bars={[68, 50, 36]}
+          showMeta
+          percent={23}
+        />
+        <BookCover
+          hue={12}
+          format="TXT"
+          bars={[48, 64, 26]}
+          showMeta
+          percent={81}
+        />
       </div>
 
       <TabBar active="shelf" />
@@ -331,7 +389,11 @@ function ShelfPane() {
  * 正文段落：应用里朗读中的句子是橙色半透明底（`.readerx-speak`，24% 强调色），
  * 书签是橙色下划线，搜索命中是更浅的橙色底。
  */
-function ReaderParagraph(props: { children: any; speak?: boolean; bookmark?: boolean }) {
+function ReaderParagraph(props: {
+  children: any;
+  speak?: boolean;
+  bookmark?: boolean;
+}) {
   return (
     <p
       class="text-[8.5px] leading-[1.95]"
@@ -378,24 +440,39 @@ function TtsBubble() {
           "box-shadow": "0 6px 22px rgb(0 0 0 / 0.22)",
         }}
       >
-        <span class="grid h-6 w-6 place-items-center rounded-full" style={{ color: INK_2 }}>
+        <span
+          class="grid h-6 w-6 place-items-center rounded-full"
+          style={{ color: INK_2 }}
+        >
           <SkipBackIconS size={11} />
         </span>
         <span
           class="mx-[1px] grid h-7 w-7 place-items-center rounded-full text-white"
-          style={{ background: ACCENT, "box-shadow": "0 4px 10px rgb(0 0 0 / 0.18)" }}
+          style={{
+            background: ACCENT,
+            "box-shadow": "0 4px 10px rgb(0 0 0 / 0.18)",
+          }}
         >
           <PauseIconS size={12} />
         </span>
-        <span class="grid h-6 w-6 place-items-center rounded-full" style={{ color: INK_2 }}>
+        <span
+          class="grid h-6 w-6 place-items-center rounded-full"
+          style={{ color: INK_2 }}
+        >
           <SkipForwardIconS size={11} />
         </span>
         <span class="mx-[1px] h-3.5 w-px" style={{ background: BORDER }} />
-        <span class="grid h-6 w-6 place-items-center rounded-full" style={{ color: INK_2 }}>
+        <span
+          class="grid h-6 w-6 place-items-center rounded-full"
+          style={{ color: INK_2 }}
+        >
           <SettingsIconS size={11} />
         </span>
       </div>
-      <span class="mt-1 pr-0.5 text-[6.5px] leading-none" style={{ color: INK_3 }}>
+      <span
+        class="mt-1 pr-0.5 text-[6.5px] leading-none"
+        style={{ color: INK_3 }}
+      >
         原生语音 · 1.25x
       </span>
     </div>
@@ -531,7 +608,11 @@ function DiscoverPane() {
           >
             <span
               class="flex-1 rounded-[5px] py-[3px] text-center text-[8px] font-semibold"
-              style={{ background: SURFACE, color: INK, "box-shadow": "0 1px 2px rgb(0 0 0 / 0.10)" }}
+              style={{
+                background: SURFACE,
+                color: INK,
+                "box-shadow": "0 1px 2px rgb(0 0 0 / 0.10)",
+              }}
             >
               搜索
             </span>
@@ -577,7 +658,7 @@ function DiscoverPane() {
               { bars: [70, 24, 40], source: "古籍库", hue: 32 },
             ]}
           >
-          {row => <ResultRow {...row} />}
+            {(row) => <ResultRow {...row} />}
           </For>
         </div>
 
@@ -599,12 +680,19 @@ function DiscoverPane() {
 function SettingsGroup(props: { label: string; children: any }) {
   return (
     <section class="mb-3">
-      <h2 class="mx-1 mb-1 text-[7.5px] font-medium tracking-[0.04em]" style={{ color: INK_3 }}>
+      <h2
+        class="mx-1 mb-1 text-[7.5px] font-medium tracking-[0.04em]"
+        style={{ color: INK_3 }}
+      >
         {props.label}
       </h2>
       <div
         class="divide-y overflow-hidden rounded-[9px]"
-        style={{ border: `1px solid ${BORDER}`, background: SURFACE, "border-color": BORDER }}
+        style={{
+          border: `1px solid ${BORDER}`,
+          background: SURFACE,
+          "border-color": BORDER,
+        }}
       >
         {props.children}
       </div>
@@ -644,7 +732,10 @@ function FontSizeControl() {
       >
         A−
       </span>
-      <span class="min-w-[26px] text-center text-[8px] font-semibold" style={{ color: INK }}>
+      <span
+        class="min-w-[26px] text-center text-[8px] font-semibold"
+        style={{ color: INK }}
+      >
         24px
       </span>
       <span
@@ -713,13 +804,19 @@ function SettingsPane() {
           </SettingRow>
           <SettingRow label="段落间距">
             <div class="flex flex-none items-center gap-1.5">
-              <span class="h-[3px] w-[54px] rounded-full" style={{ background: SURFACE_2 }}>
+              <span
+                class="h-[3px] w-[54px] rounded-full"
+                style={{ background: SURFACE_2 }}
+              >
                 <span
                   class="block h-full w-[38%] rounded-full"
                   style={{ background: ACCENT }}
                 />
               </span>
-              <span class="w-4 text-right text-[8px] font-semibold" style={{ color: INK }}>
+              <span
+                class="w-4 text-right text-[8px] font-semibold"
+                style={{ color: INK }}
+              >
                 1.0
               </span>
             </div>
@@ -735,7 +832,10 @@ function SettingsPane() {
               >
                 左右翻页
               </span>
-              <span class="rounded-[5px] px-1.5 py-[3px] text-[7.5px]" style={{ color: INK_2 }}>
+              <span
+                class="rounded-[5px] px-1.5 py-[3px] text-[7.5px]"
+                style={{ color: INK_2 }}
+              >
                 上下滚动
               </span>
             </div>
@@ -755,7 +855,10 @@ function SettingsPane() {
               >
                 −
               </span>
-              <span class="min-w-[20px] text-center text-[8px] font-semibold" style={{ color: INK }}>
+              <span
+                class="min-w-[20px] text-center text-[8px] font-semibold"
+                style={{ color: INK }}
+              >
                 4
               </span>
               <span
@@ -799,7 +902,7 @@ function SourceRow(props: {
         </span>
         <span class="flex flex-wrap items-center gap-1">
           <For each={props.caps.split(" ")}>
-            {cap => (
+            {(cap) => (
               <span
                 class="rounded-full px-1 py-[0.5px] text-[6px] font-semibold"
                 style={{ background: ACCENT_WEAK, color: ACCENT }}
@@ -837,7 +940,10 @@ export function SourceListCard(props: { class?: string }) {
     >
       <div
         class="flex items-center gap-2 px-3.5 py-2.5"
-        style={{ "border-bottom": `1px solid ${BORDER}`, background: "rgba(238,240,244,0.6)" }}
+        style={{
+          "border-bottom": `1px solid ${BORDER}`,
+          background: "rgba(238,240,244,0.6)",
+        }}
       >
         <SourceIconS size={12} />
         <span class="text-[11px] font-semibold" style={{ color: INK }}>
@@ -851,9 +957,9 @@ export function SourceListCard(props: { class?: string }) {
         </span>
       </div>
       <div class="divide-y" style={{ "border-color": BORDER }}>
-        <SourceRow name="起点源" caps="搜索 发现 详情 目录 正文" on />
-        <SourceRow name="笔趣阁" caps="搜索 目录 正文" on />
-        <SourceRow name="古籍库" caps="搜索 详情 目录" on />
+        <SourceRow name="XX源" caps="搜索 发现 详情 目录 正文" on />
+        <SourceRow name="XX阁" caps="搜索 目录 正文" on />
+        <SourceRow name="XX库" caps="搜索 详情 目录" on />
       </div>
     </div>
   );
@@ -932,14 +1038,20 @@ export function DesktopWindow(props: { class?: string }) {
             {/* 品牌标记：直接复用真实标志（与应用图标同一图形），不另画一份 */}
             <LogoMark size={24} class="flex-none rounded-[7px]" />
             <span class="flex min-w-0 flex-1 flex-col leading-tight">
-              <span class="text-[9.5px] font-bold tracking-[0.01em]" style={{ color: INK }}>
+              <span
+                class="text-[9.5px] font-bold tracking-[0.01em]"
+                style={{ color: INK }}
+              >
                 ReaderX
               </span>
               <span class="text-[6.5px]" style={{ color: INK_3 }}>
                 本地书管理
               </span>
             </span>
-            <span class="grid h-4 w-4 flex-none place-items-center" style={{ color: INK_3 }}>
+            <span
+              class="grid h-4 w-4 flex-none place-items-center"
+              style={{ color: INK_3 }}
+            >
               <SidebarCollapseIconS size={10} />
             </span>
           </div>
@@ -951,7 +1063,7 @@ export function DesktopWindow(props: { class?: string }) {
               { label: "设置", Icon: SettingsIconS, active: false },
             ]}
           >
-            {item => (
+            {(item) => (
               <span
                 class="flex items-center gap-2 rounded-[7px] px-1.5 py-[5px] text-[8.5px] font-medium"
                 style={
@@ -982,25 +1094,44 @@ function DiscoverContent() {
     <>
       <div
         class="flex items-center gap-2 px-3.5 pb-2 pt-3"
-        style={{ "border-bottom": `1px solid ${BORDER}`, background: "rgba(244,245,247,0.84)" }}
+        style={{
+          "border-bottom": `1px solid ${BORDER}`,
+          background: "rgba(244,245,247,0.84)",
+        }}
       >
-        <h1 class="text-[13px] font-bold tracking-[0.02em]" style={{ color: INK }}>
+        <h1
+          class="text-[13px] font-bold tracking-[0.02em]"
+          style={{ color: INK }}
+        >
           发现
         </h1>
-        <span class="ml-auto grid h-6 w-6 place-items-center rounded-[7px]" style={{ color: INK_2 }}>
+        <span
+          class="ml-auto grid h-6 w-6 place-items-center rounded-[7px]"
+          style={{ color: INK_2 }}
+        >
           <SourceIconS size={11} />
         </span>
       </div>
 
       <div class="flex flex-1 flex-col gap-2 px-3.5 pt-2">
-        <div class="flex gap-[2px] rounded-[7px] p-[2px]" style={{ background: SURFACE_2 }}>
+        <div
+          class="flex gap-[2px] rounded-[7px] p-[2px]"
+          style={{ background: SURFACE_2 }}
+        >
           <span
             class="flex-1 rounded-[5px] py-[3px] text-center text-[8px] font-semibold"
-            style={{ background: SURFACE, color: INK, "box-shadow": "0 1px 2px rgb(0 0 0 / 0.10)" }}
+            style={{
+              background: SURFACE,
+              color: INK,
+              "box-shadow": "0 1px 2px rgb(0 0 0 / 0.10)",
+            }}
           >
             搜索
           </span>
-          <span class="flex-1 rounded-[5px] py-[3px] text-center text-[8px]" style={{ color: INK_2 }}>
+          <span
+            class="flex-1 rounded-[5px] py-[3px] text-center text-[8px]"
+            style={{ color: INK_2 }}
+          >
             发现
           </span>
         </div>
@@ -1035,7 +1166,7 @@ function DiscoverContent() {
               { bars: [52, 34, 48], source: "起点源", hue: 336 },
             ]}
           >
-            {row => <ResultRow {...row} />}
+            {(row) => <ResultRow {...row} />}
           </For>
         </div>
       </div>
