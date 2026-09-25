@@ -1,0 +1,5 @@
+# pnpm 11+ 的配置（package.json 的 "pnpm" 字段已不再被读取）。
+# 允许这些依赖运行安装脚本：wrangler 本地预览需要 workerd 运行时，esbuild 需要其平台二进制。
+allowBuilds:
+  esbuild: true
+  workerd: true
