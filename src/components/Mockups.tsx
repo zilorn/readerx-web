@@ -28,7 +28,9 @@ import {
  * - 手机端底部只有三个 Tab（书架 / 发现 / 设置，见 `shell/routes.ts` 的 `TAB_ROUTES`），
  *   听书不是 Tab，它是阅读页菜单顶栏上的耳机按钮；
  * - 书架是纯封面网格（96px 轨道，自动决定每行几本，见 `pages/Bookshelf.tsx` 的 ShelfGrid），
- *   封面左上角是格式角标（TXT / EPUB / PDF / 在线），下方是书名与「读到 N%」；
+ *   封面左上角是格式角标（TXT / EPUB / PDF / 在线），下方只有「读到 N%」与进度条；
+ * - 示意图里 **不写具体书名 / 作者 / 章节名**（虚拟书名会被当成真实书籍）：
+ *   封面里的书名作者、发现页结果行都画成半透明占位条，阅读页只留「第三章」这类结构文案；
  * - 阅读页正文默认 24px / 行高 1.95（`lib/pagination.ts` 的 `READING_LINE_HEIGHT`），
  *   朗读中的句子用橙色半透明底色（`.readerx-speak`）；
  * - 听书悬浮球是右下角的胶囊（上一句 / 播放 / 下一句 / 设置），
@@ -103,20 +105,25 @@ function PhoneFrame(props: { children: any; class?: string }) {
 
 /**
  * 书封：应用里同款「程序化渐变封面」（`components/BookCover.tsx`），
- * 带格式角标 + 顶部高光，下方可选书名 / 进度。
+ * 带格式角标 + 顶部高光，下方可选阅读进度。
+ *
+ * 封面上的书名 / 作者不写具体文字，用半透明占位条表示（见文件头说明）。
  */
 function BookCover(props: {
-  title: string;
-  author: string;
   hue: number;
   format: "TXT" | "EPUB" | "PDF" | "在线";
+  /** 三条占位条的宽度（%）：前两条是书名，最后一条是作者 */
+  bars: number[];
   showMeta?: boolean;
-  progress?: string;
+  /** 读到百分之几；`finished` 时为整本读完 */
+  percent?: number;
   finished?: boolean;
 }) {
   // 与 BookCover.tsx 完全相同的渐变口径：hue 与 hue+24，58%/52% 与 62%/34%
   const background = () =>
     `linear-gradient(165deg, hsl(${props.hue} 58% 52%), hsl(${(props.hue + 24) % 360} 62% 34%))`;
+  // 占位条再短也要看得出是一行字，再长也不顶到封面边缘（没给宽度时按最短处理）
+  const barWidth = (value = 0) => `${Math.min(78, Math.max(20, value))}%`;
 
   return (
     <div class="flex flex-col gap-[3px]">
@@ -133,38 +140,42 @@ function BookCover(props: {
         <span class="absolute left-1 top-1 z-10 rounded-full bg-black/30 px-[3px] py-[1.5px] text-[5.5px] leading-none tracking-[0.08em]">
           {props.format}
         </span>
-        <span class="relative z-10 line-clamp-3 px-1 text-center text-[8px] font-bold leading-none [text-shadow:0_2px_6px_rgb(0_0_0/0.2)]">
-          {props.title}
-        </span>
-        <span class="relative z-10 max-w-[85%] truncate text-[6px] leading-[1.2] tracking-[0.05em] text-white/85">
-          {props.author}
+        {/* 书名 / 作者：占位条 */}
+        <span class="relative z-10 flex w-full flex-col items-center gap-[3px] px-1.5">
+          <span
+            class="h-[3px] rounded-full bg-white/75"
+            style={{ width: barWidth(props.bars[0]) }}
+          />
+          <span
+            class="h-[3px] rounded-full bg-white/75"
+            style={{ width: barWidth(props.bars[1]) }}
+          />
+          <span
+            class="mt-[1px] h-[2px] rounded-full bg-white/45"
+            style={{ width: barWidth(props.bars[2]) }}
+          />
         </span>
       </div>
       <Show when={props.showMeta}>
-        <span class="truncate text-[8.5px] font-semibold" style={{ color: INK }}>
-          {props.title}
+        <span
+          class="truncate text-[7px] font-medium"
+          style={{ color: props.finished ? SUCCESS : ACCENT }}
+        >
+          {props.finished ? "已读完" : `读到 ${props.percent}%`}
         </span>
-        <Show when={props.progress}>
-          <span
-            class="text-[7px] font-medium"
-            style={{ color: props.finished ? SUCCESS : ACCENT }}
-          >
-            {props.finished ? "已读完" : props.progress}
-          </span>
-          <span
-            class="h-[2px] w-full overflow-hidden rounded-[1px]"
-            style={{ background: SURFACE_2 }}
-            aria-hidden="true"
-          >
-            <i
-              class="block h-full rounded-[1px]"
-              style={{
-                width: props.finished ? "100%" : "64%",
-                background: props.finished ? SUCCESS : ACCENT,
-              }}
-            />
-          </span>
-        </Show>
+        <span
+          class="h-[2px] w-full overflow-hidden rounded-[1px]"
+          style={{ background: SURFACE_2 }}
+          aria-hidden="true"
+        >
+          <i
+            class="block h-full rounded-[1px]"
+            style={{
+              width: `${props.finished ? 100 : (props.percent ?? 0)}%`,
+              background: props.finished ? SUCCESS : ACCENT,
+            }}
+          />
+        </span>
       </Show>
     </div>
   );
@@ -297,14 +308,14 @@ function ShelfPane() {
 
       {/* 封面网格：96px 轨道自动填充，这里按手机列宽排成 4 列 */}
       <div class="grid flex-1 grid-cols-4 content-start gap-x-2 gap-y-3 overflow-hidden px-3.5 pt-2">
-        <BookCover title="长夜将尽" author="沈砚" hue={142} format="TXT" showMeta progress="读到 64%" />
-        <BookCover title="雾中灯塔" author="林晚" hue={210} format="EPUB" showMeta progress="读到 12%" />
-        <BookCover title="山海旧闻" author="佚名" hue={32} format="TXT" showMeta progress="已读完" finished />
-        <BookCover title="春山可望" author="周棠" hue={336} format="EPUB" showMeta progress="读到 38%" />
-        <BookCover title="潮汐笔记" author="许舟" hue={178} format="PDF" showMeta progress="读到 7%" />
-        <BookCover title="孤帆远影" author="叶白" hue={258} format="TXT" showMeta progress="读到 55%" />
-        <BookCover title="灯下故人" author="沈砚" hue={96} format="在线" showMeta progress="读到 23%" />
-        <BookCover title="雪落无声" author="林晚" hue={12} format="TXT" showMeta progress="读到 81%" />
+        <BookCover hue={142} format="TXT" bars={[66, 44, 32]} showMeta percent={64} />
+        <BookCover hue={210} format="EPUB" bars={[46, 60, 26]} showMeta percent={12} />
+        <BookCover hue={32} format="TXT" bars={[72, 38, 34]} showMeta finished />
+        <BookCover hue={336} format="EPUB" bars={[54, 42, 28]} showMeta percent={38} />
+        <BookCover hue={178} format="PDF" bars={[62, 36, 24]} showMeta percent={7} />
+        <BookCover hue={258} format="TXT" bars={[42, 58, 30]} showMeta percent={55} />
+        <BookCover hue={96} format="在线" bars={[68, 50, 36]} showMeta percent={23} />
+        <BookCover hue={12} format="TXT" bars={[48, 64, 26]} showMeta percent={81} />
       </div>
 
       <TabBar active="shelf" />
@@ -402,7 +413,7 @@ function ReaderPane() {
         {/* 章节标题行：应用里正文顶部就是章节名，没有额外顶栏 */}
         <div class="mb-2 flex items-baseline justify-between">
           <span class="text-[8px] font-semibold" style={{ color: "#8b8069" }}>
-            第三章 · 灯下故人
+            第三章
           </span>
           <span class="text-[7px]" style={{ color: "#a99c82" }}>
             第 3/48 章
@@ -435,7 +446,7 @@ function ReaderPane() {
         class="flex items-center justify-between px-3.5 py-1.5 text-[6.5px] leading-none"
         style={{ color: "#a99c82", "border-top": `1px solid #ece2cf` }}
       >
-        <span>长夜将尽 · 第三章</span>
+        <span>第三章</span>
         <span>64% · 22:14</span>
       </div>
     </div>
@@ -446,11 +457,13 @@ function ReaderPane() {
  * 发现页（pages/Discover.tsx）
  * ------------------------------------------------------------------ */
 
-/** 搜索结果行：封面 + 书名 / 作者 · 最新章节 + 书源名与右箭头 */
+/**
+ * 搜索结果行：封面 + 书名 / 作者 · 最新章节 + 书源名与右箭头。
+ * 书名、作者与最新章节属于示意内容，按要求画成占位条，不写具体书名。
+ */
 function ResultRow(props: {
-  title: string;
-  author: string;
-  latest: string;
+  /** 三条占位条的宽度（%）：书名 / 作者 / 最新章节 */
+  bars: number[];
   source: string;
   hue: number;
 }) {
@@ -462,16 +475,24 @@ function ResultRow(props: {
           background: `linear-gradient(165deg, hsl(${props.hue} 58% 52%), hsl(${(props.hue + 24) % 360} 62% 34%))`,
         }}
       />
-      <span class="flex min-w-0 flex-1 flex-col gap-[1px]">
-        <span class="truncate text-[9px] font-medium" style={{ color: INK }}>
-          {props.title}
-        </span>
-        <span class="flex items-center gap-1 truncate text-[7px]" style={{ color: INK_3 }}>
-          <span class="truncate">{props.author}</span>
-          <span aria-hidden="true">·</span>
-          <span class="truncate" style={{ color: ACCENT }}>
-            {props.latest}
-          </span>
+      <span class="flex min-w-0 flex-1 flex-col gap-[4px]">
+        <span
+          class="h-[5px] rounded-full"
+          style={{ width: `${props.bars[0]}%`, background: "#c8cdd7" }}
+        />
+        <span class="flex items-center gap-1.5">
+          <span
+            class="h-[3.5px] rounded-full"
+            style={{ width: `${props.bars[1]}%`, background: "#dfe3ea" }}
+          />
+          {/* 最新章节：应用里这一段是强调色 */}
+          <span
+            class="h-[3.5px] rounded-full"
+            style={{
+              width: `${props.bars[2]}%`,
+              background: `color-mix(in srgb, ${ACCENT} 42%, transparent)`,
+            }}
+          />
         </span>
       </span>
       <span class="flex flex-none flex-col items-end gap-[1px]">
@@ -551,9 +572,9 @@ function DiscoverPane() {
         >
           <For
             each={[
-              { title: "长夜将尽", author: "沈砚", latest: "第 48 章 灯下故人", source: "起点源", hue: 142 },
-              { title: "雾中灯塔", author: "林晚", latest: "第 132 章 潮声", source: "笔趣阁", hue: 210 },
-              { title: "山海旧闻", author: "佚名", latest: "卷三 · 北荒", source: "古籍库", hue: 32 },
+              { bars: [62, 30, 46], source: "起点源", hue: 142 },
+              { bars: [48, 38, 54], source: "笔趣阁", hue: 210 },
+              { bars: [70, 24, 40], source: "古籍库", hue: 32 },
             ]}
           >
           {row => <ResultRow {...row} />}
@@ -1008,10 +1029,10 @@ function DiscoverContent() {
         >
           <For
             each={[
-              { title: "长夜将尽", author: "沈砚", latest: "第 48 章 灯下故人", source: "起点源", hue: 142 },
-              { title: "雾中灯塔", author: "林晚", latest: "第 132 章 潮声", source: "笔趣阁", hue: 210 },
-              { title: "山海旧闻", author: "佚名", latest: "卷三 · 北荒", source: "古籍库", hue: 32 },
-              { title: "春山可望", author: "周棠", latest: "第 9 章 归途", source: "起点源", hue: 336 },
+              { bars: [62, 30, 46], source: "起点源", hue: 142 },
+              { bars: [48, 38, 54], source: "笔趣阁", hue: 210 },
+              { bars: [70, 24, 40], source: "古籍库", hue: 32 },
+              { bars: [52, 34, 48], source: "起点源", hue: 336 },
             ]}
           >
             {row => <ResultRow {...row} />}
