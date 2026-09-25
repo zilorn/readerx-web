@@ -10,10 +10,12 @@ import {
   StarIcon,
   WindowsIcon,
 } from "~/components/icons";
-import { HERO_ROTATING_WORDS, REPO_URL } from "~/data/site";
+import { REPO_URL } from "~/data/site";
+import { useI18n } from "~/i18n";
 import { useVersion } from "~/lib/releaseClient";
 import { handleAnchorNav } from "~/lib/scroll";
 
+/** 平台支持一行：名称是技术口径（版本号 / 架构），各语言一致 */
 const PLATFORM_BADGES = [
   { label: "Android 7.0+", Icon: AndroidIcon },
   { label: "Windows 10 / 11", Icon: WindowsIcon },
@@ -21,6 +23,7 @@ const PLATFORM_BADGES = [
 ];
 
 export default function Hero() {
+  const { dict } = useI18n();
   const version = useVersion();
 
   return (
@@ -38,12 +41,14 @@ export default function Hero() {
           >
             <span class="flex items-center gap-1 rounded-full bg-mint-600 py-0.5 pl-2 pr-2.5 text-[0.7rem] font-bold tracking-wide text-white">
               <StarIcon size={11} />
-              <Show when={version()} fallback="最新版">
+              <Show when={version()} fallback={dict().hero.versionFallback}>
                 {value => <>v{value()}</>}
               </Show>
             </span>
             <span class="font-medium text-ink-2">
-              已在 <span class="text-ink">Android · Windows · Linux</span> 上可用
+              {dict().hero.availablePrefix}
+              <span class="text-ink">Android · Windows · Linux</span>
+              {dict().hero.availableSuffix}
             </span>
           </div>
 
@@ -52,15 +57,15 @@ export default function Hero() {
             class="mt-7 text-[2.1rem] font-extrabold leading-[1.18] tracking-tight text-ink animate-rise sm:text-[2.9rem] md:text-[3.4rem] lg:text-[3.75rem]"
             style={{ "animation-delay": "90ms" }}
           >
-            <span class="block">把整个书库</span>
+            <span class="block">{dict().hero.titleLine1}</span>
             <span class="mt-1 block">
-              <span class="text-ink-3">「</span>
+              <span class="text-ink-3">{dict().hero.quoteOpen}</span>
               <Typewriter
-                words={HERO_ROTATING_WORDS}
+                words={dict().hero.rotatingWords}
                 class="text-gradient-mint font-extrabold"
               />
-              <span class="text-ink-3">」</span>
-              <span class="text-ink">装进口袋</span>
+              <span class="text-ink-3">{dict().hero.quoteClose}</span>
+              <span class="text-ink">{dict().hero.titleLine2Suffix}</span>
             </span>
           </h1>
 
@@ -68,9 +73,9 @@ export default function Hero() {
             class="mt-6 max-w-2xl text-[1.02rem] leading-relaxed text-ink-2 animate-rise sm:text-[1.1rem]"
             style={{ "animation-delay": "180ms" }}
           >
-            基于 <strong class="font-semibold text-ink">Tauri 2 + SolidJS</strong>{" "}
-            的电子书阅读器。手机上是单手可用的移动端应用，桌面上是侧边导航的窗口应用，
-            两者共用同一套页面与本地书库。
+            {dict().hero.descriptionBefore}
+            <strong class="font-semibold text-ink">Tauri 2 + SolidJS</strong>
+            {dict().hero.descriptionAfter}
           </p>
 
           <div
@@ -82,7 +87,7 @@ export default function Hero() {
               onClick={handleAnchorNav}
               class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-mint-600 px-7 py-3.5 text-[0.98rem] font-semibold text-white shadow-[0_10px_30px_-10px_rgba(38,128,81,0.75)] transition-all hover:-translate-y-0.5 hover:bg-mint-700 hover:shadow-[0_16px_36px_-12px_rgba(38,128,81,0.8)] sm:w-auto"
             >
-              下载 ReaderX
+              {dict().hero.ctaDownload}
               <ArrowRightIcon
                 size={18}
                 class="transition-transform group-hover:translate-x-1"
@@ -95,7 +100,7 @@ export default function Hero() {
               class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/80 px-6 py-3.5 text-[0.98rem] font-semibold text-ink transition-colors hover:border-mint-200 hover:bg-mint-50 hover:text-mint-700 sm:w-auto"
             >
               <GitHubIcon size={18} />
-              查看源码
+              {dict().hero.ctaSource}
             </a>
           </div>
 
@@ -114,7 +119,7 @@ export default function Hero() {
             </For>
             <li class="flex items-center gap-1.5">
               <HeadphonesIcon size={14} class="text-mint-600" />
-              双引擎听书
+              {dict().hero.badgeTts}
             </li>
           </ul>
         </div>

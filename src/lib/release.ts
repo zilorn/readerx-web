@@ -40,8 +40,9 @@ export interface ReleaseInfo {
 
 /** 产物在界面上的展示形态：静态说明 + 线上元数据 */
 export interface ResolvedVariant {
+  /** 与 `PlatformVariantMeta["id"]` 一致：界面据此去文案里取「这份产物适合谁」 */
+  id: VariantId;
   label: string;
-  hint: string;
   recommended?: boolean;
   /** 直链；该版本没有这份产物时为 undefined */
   url?: string;
@@ -97,24 +98,39 @@ export interface AssetPattern {
 
 /** 平台下的一个可选架构 / 安装包类型 */
 export interface PlatformVariantMeta {
-  /** 界面上的短标签（arm64-v8a / AppImage …） */
+  /** 稳定 id：与文案字典 `platforms.<平台>.variants` 的键一一对应 */
+  id: VariantId;
+  /** 界面上的短标签（arm64-v8a / AppImage …），技术名，不随语言翻译 */
   label: string;
-  /** 一句话说明这份产物适合谁 */
-  hint: string;
   recommended?: boolean;
   pattern: AssetPattern;
 }
 
+/**
+ * 各平台都有哪些产物 id。
+ *
+ * 单独列在这里而不是从 `PLATFORMS` 推导，是为了让文案字典能用字面量键
+ * （`messages.platforms.android.variants["arm64-v8a"]`）—— 漏翻一份产物、
+ * 或者写错一个 id，编译期就会报错。
+ */
+export interface PlatformVariants {
+  android: "arm64-v8a" | "armeabi-v7a" | "x86_64" | "x86";
+  windows: "win-x64" | "win-arm64";
+  linux: "appimage" | "deb" | "rpm";
+}
+
+export type PlatformId = keyof PlatformVariants;
+export type VariantId = PlatformVariants[PlatformId];
+
 /** 平台的静态说明文案（与发版无关，不随 Release 变化） */
 export interface PlatformMeta {
-  id: "android" | "windows" | "linux";
+  id: PlatformId;
+  /** 品牌名（Android / Windows / Linux），不翻译 */
   name: string;
-  /** 系统要求 */
-  requirement: string;
-  /** 平台整体说明 */
-  summary: string;
-  /** 安装提示 */
-  note: string;
+  /**
+   * 系统要求 / 平台说明 / 安装提示在各语言文案里
+   * （`messages.platforms[id].requirement | summary | note`）。
+   */
   variants: PlatformVariantMeta[];
 }
 
@@ -155,8 +171,8 @@ export function resolvePlatformVariants(
     result[platform.id] = platform.variants.map((variant, index) => {
       const asset = picked.get(index);
       return {
+        id: variant.id,
         label: variant.label,
-        hint: variant.hint,
         recommended: variant.recommended,
         url: asset?.url,
         assetName: asset?.name,
@@ -206,8 +222,13 @@ export function stripVersionPrefix(tag: string): string {
   return tag.replace(/^v/i, "");
 }
 
-/** 大数字千分位：`12345` → `12,345` */
-export function formatCount(value?: number): string | undefined {
+/** 大数字千分位：`12345` → `12,345`（按传入语言的分组习惯，默认英文口径） */
+export function formatCount(value?: number, locale = "en-US"): string | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
-  return value.toLocaleString("en-US");
+  try {
+    return value.toLocaleString(locale);
+  } catch {
+    // 运行环境缺少该语言的 Intl 数据时退回默认口径，不影响数字本身
+    return value.toLocaleString("en-US");
+  }
 }

@@ -1,43 +1,64 @@
 // @refresh reload
 import { createHandler, StartServer } from "@solidjs/start/server";
+import { getRequestEvent } from "solid-js/web";
+import { resolveRequestLocale } from "~/i18n/locale";
+import { messages } from "~/i18n/messages";
 
-const TITLE = "ReaderX — 把整个书库装进口袋";
-const DESCRIPTION =
-  "ReaderX 是基于 Tauri 2 + SolidJS 的电子书阅读器：手机上是单手可用的移动端应用，桌面上是侧边导航的窗口应用。本地书架、JS 书源、双引擎听书、TXT / EPUB / PDF 导入，书架与阅读进度都存在本机。支持 Android、Windows 与 Linux。";
+/** 分享链接指向的项目主页（og:url 用） */
 const URL = "https://github.com/zilorn/readerx";
+
+/** og:locale 用的语言口径：`zh_CN` / `en_US` */
+const OG_LOCALES = { "zh-CN": "zh_CN", en: "en_US" } as const;
 
 export default createHandler(() => (
   <StartServer
-    document={({ assets, children, scripts }) => (
-      <html lang="zh-CN">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>{TITLE}</title>
-          <meta name="description" content={DESCRIPTION} />
-          <meta name="theme-color" content="#fbfdfb" />
-          <meta name="color-scheme" content="light" />
+    document={({ assets, children, scripts }) => {
+      /**
+       * 文档级信息（`<html lang>`、标题、描述）必须按请求的语言渲染：
+       * 这些标签在组件树之外，客户端切语言时由 `applyDocumentLocale` 负责改写。
+       *
+       * 判定与组件树里 `I18nProvider` 用的是同一个函数、同一份请求头，
+       * 所以服务端渲染出的 HTML 与客户端水合时读到的语言必然一致。
+       */
+      const event = getRequestEvent();
+      const locale = resolveRequestLocale(event?.request?.headers);
+      const dict = messages[locale];
 
-          <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-          <link rel="alternate icon" href="/favicon.ico" />
+      // 内容是随 Accept-Language / Cookie 变的，告诉中间缓存别把两份语言混着发
+      event?.response?.headers.set("vary", "Accept-Language, Cookie");
 
-          {/* 社交分享 */}
-          <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="ReaderX" />
-          <meta property="og:title" content={TITLE} />
-          <meta property="og:description" content={DESCRIPTION} />
-          <meta property="og:url" content={URL} />
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content={TITLE} />
-          <meta name="twitter:description" content={DESCRIPTION} />
+      return (
+        <html lang={locale}>
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>{dict.meta.title}</title>
+            <meta name="description" content={dict.meta.description} />
+            <meta name="theme-color" content="#fbfdfb" />
+            <meta name="color-scheme" content="light" />
 
-          {assets}
-        </head>
-        <body>
-          <div id="app">{children}</div>
-          {scripts}
-        </body>
-      </html>
-    )}
+            <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+            <link rel="alternate icon" href="/favicon.ico" />
+
+            {/* 社交分享 */}
+            <meta property="og:type" content="website" />
+            <meta property="og:site_name" content="ReaderX" />
+            <meta property="og:locale" content={OG_LOCALES[locale]} />
+            <meta property="og:title" content={dict.meta.title} />
+            <meta property="og:description" content={dict.meta.description} />
+            <meta property="og:url" content={URL} />
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content={dict.meta.title} />
+            <meta name="twitter:description" content={dict.meta.description} />
+
+            {assets}
+          </head>
+          <body>
+            <div id="app">{children}</div>
+            {scripts}
+          </body>
+        </html>
+      );
+    }}
   />
 ));

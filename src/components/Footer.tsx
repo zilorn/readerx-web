@@ -1,34 +1,23 @@
 import { For, Show } from "solid-js";
+import { LanguageInline } from "~/components/LanguageSwitcher";
 import { LogoMark, Wordmark } from "~/components/Logo";
 import { ArrowRightIcon, GitHubIcon } from "~/components/icons";
 import { NAV_LINKS, REPO_URL } from "~/data/site";
+import { useI18n } from "~/i18n";
 import { useVersion } from "~/lib/releaseClient";
 import { handleAnchorNav } from "~/lib/scroll";
 
+/** 文档入口：链接固定，标题按语言取自 `messages.footer.docLinks` */
 const DOC_LINKS = [
-  {
-    label: "书源规范",
-    href: `${REPO_URL}/blob/main/docs/book-source-spec.md`,
-  },
-  {
-    label: "宿主 API 参考",
-    href: `${REPO_URL}/blob/main/docs/book-source-api.md`,
-  },
-  {
-    label: "书源编写教程",
-    href: `${REPO_URL}/blob/main/docs/book-source-guide.md`,
-  },
-  {
-    label: "Cloudflare 处理",
-    href: `${REPO_URL}/blob/main/docs/cloudflare.md`,
-  },
-  {
-    label: "日志与排障",
-    href: `${REPO_URL}/blob/main/docs/logging.md`,
-  },
-];
+  { id: "spec", href: `${REPO_URL}/blob/main/docs/book-source-spec.md` },
+  { id: "api", href: `${REPO_URL}/blob/main/docs/book-source-api.md` },
+  { id: "guide", href: `${REPO_URL}/blob/main/docs/book-source-guide.md` },
+  { id: "cloudflare", href: `${REPO_URL}/blob/main/docs/cloudflare.md` },
+  { id: "logging", href: `${REPO_URL}/blob/main/docs/logging.md` },
+] as const;
 
 export default function Footer() {
+  const { dict } = useI18n();
   const version = useVersion();
 
   return (
@@ -46,10 +35,10 @@ export default function Footer() {
           />
           <div class="relative">
             <h2 class="text-[1.8rem] font-extrabold leading-tight tracking-tight text-white sm:text-[2.4rem]">
-              现在就把书库装进口袋
+              {dict().footer.ctaTitle}
             </h2>
             <p class="mx-auto mt-4 max-w-xl text-[1rem] leading-relaxed text-white/80">
-              完全本地、开源、无账号。装上之后，先导入一本 TXT 或 EPUB 试试手感。
+              {dict().footer.ctaBody}
             </p>
             <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
@@ -57,10 +46,10 @@ export default function Footer() {
                 onClick={handleAnchorNav}
                 class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-[0.98rem] font-bold text-mint-800 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] transition-transform hover:-translate-y-0.5 sm:w-auto"
               >
-                下载
-                <Show when={version()}>
-                  {value => <>v{value()}</>}
-                </Show>
+                {dict().footer.download}
+                {/* 版本号单独成一项：flex 的 gap 负责与「下载」之间的间距，
+                    中文可以紧挨着写，英文「Download v0.2.0」不能没有空格 */}
+                <Show when={version()}>{value => <span>v{value()}</span>}</Show>
                 <ArrowRightIcon size={18} class="transition-transform group-hover:translate-x-1" />
               </a>
               <a
@@ -86,12 +75,11 @@ export default function Footer() {
               <Wordmark fontSize={19} />
             </div>
             <p class="mt-4 max-w-sm text-[0.9rem] leading-relaxed text-ink-2">
-              基于 Tauri 2 + SolidJS + TypeScript 的电子书阅读器。手机上是一个单手可用的移动端应用，
-              桌面上是侧边导航的窗口应用，两者共用同一套页面与本地书库。
+              {dict().footer.description}
             </p>
             <div class="mt-5 flex flex-wrap items-center gap-2">
               <span class="rounded-full bg-white px-3 py-1 text-[0.75rem] font-semibold text-mint-800 ring-1 ring-mint-100">
-                <Show when={version()} fallback="最新版">
+                <Show when={version()} fallback={dict().footer.versionFallback}>
                   {value => <>v{value()}</>}
                 </Show>
               </span>
@@ -99,13 +87,15 @@ export default function Footer() {
                 Android · Windows · Linux
               </span>
               <span class="rounded-full bg-white px-3 py-1 text-[0.75rem] font-medium text-ink-2 ring-1 ring-ink/8">
-                本地优先 · 零上传
+                {dict().footer.localBadge}
               </span>
             </div>
           </div>
 
-          <nav aria-label="站内导航">
-            <h3 class="text-[0.82rem] font-bold uppercase tracking-[0.12em] text-ink-3">导航</h3>
+          <nav aria-label={dict().footer.navAria}>
+            <h3 class="text-[0.82rem] font-bold uppercase tracking-[0.12em] text-ink-3">
+              {dict().footer.navTitle}
+            </h3>
             <ul class="mt-4 space-y-2.5">
               <For each={NAV_LINKS}>
                 {link => (
@@ -115,7 +105,7 @@ export default function Footer() {
                       onClick={handleAnchorNav}
                       class="text-[0.9rem] text-ink-2 transition-colors hover:text-mint-700"
                     >
-                      {link.label}
+                      {dict().nav.sections[link.id]}
                     </a>
                   </li>
                 )}
@@ -123,8 +113,10 @@ export default function Footer() {
             </ul>
           </nav>
 
-          <nav aria-label="文档">
-            <h3 class="text-[0.82rem] font-bold uppercase tracking-[0.12em] text-ink-3">文档</h3>
+          <nav aria-label={dict().footer.docsAria}>
+            <h3 class="text-[0.82rem] font-bold uppercase tracking-[0.12em] text-ink-3">
+              {dict().footer.docsTitle}
+            </h3>
             <ul class="mt-4 space-y-2.5">
               <For each={DOC_LINKS}>
                 {link => (
@@ -135,7 +127,7 @@ export default function Footer() {
                       rel="noreferrer"
                       class="text-[0.9rem] text-ink-2 transition-colors hover:text-mint-700"
                     >
-                      {link.label}
+                      {dict().footer.docLinks[link.id]}
                     </a>
                   </li>
                 )}
@@ -147,7 +139,7 @@ export default function Footer() {
                   rel="noreferrer"
                   class="text-[0.9rem] text-ink-2 transition-colors hover:text-mint-700"
                 >
-                  全部版本与产物
+                  {dict().footer.allReleases}
                 </a>
               </li>
             </ul>
@@ -156,7 +148,7 @@ export default function Footer() {
 
         <div class="mt-12 flex flex-col gap-4 border-t border-ink/8 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p class="text-[0.82rem] text-ink-3">
-            © {new Date().getFullYear()} ReaderX · 开源项目，代码托管在{" "}
+            © {new Date().getFullYear()} ReaderX · {dict().footer.copyrightPrefix}{" "}
             <a
               href={REPO_URL}
               target="_blank"
@@ -166,9 +158,11 @@ export default function Footer() {
               GitHub
             </a>
           </p>
-          <p class="text-[0.82rem] text-ink-3">
-            本站与 ReaderX 应用均不含广告与账号系统，不收集你的阅读数据。
-          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            <p class="text-[0.82rem] text-ink-3">{dict().footer.privacy}</p>
+            {/* 页脚也放一份语言切换：滚到底之后导航栏已经收起，这里是唯一的入口 */}
+            <LanguageInline />
+          </div>
         </div>
       </div>
     </footer>

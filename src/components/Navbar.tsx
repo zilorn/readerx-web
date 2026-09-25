@@ -1,7 +1,9 @@
 import { For, createMemo, createSignal } from "solid-js";
 import { ArrowDownIcon, DownloadIcon, GitHubIcon } from "~/components/icons";
+import { LanguageMenu } from "~/components/LanguageSwitcher";
 import { LogoMark, Wordmark } from "~/components/Logo";
 import { NAV_LINKS, REPO_URL } from "~/data/site";
+import { useI18n } from "~/i18n";
 import {
   handleAnchorNav,
   scrollToTop,
@@ -11,14 +13,19 @@ import {
   useScrollPast,
 } from "~/lib/scroll";
 
-const SECTION_IDS = NAV_LINKS.map(link => link.href.slice(1));
+const SECTION_IDS = NAV_LINKS.map(link => link.id);
 
 /**
  * 灵动岛式导航：悬浮玻璃胶囊。
  * 初始是展开态；向下滚动收起成一颗小结，向上滚动重新展开。
  * 收起状态下，鼠标悬停 / 键盘聚焦也能临时把它拉开（触屏没有 hover，靠上滑）。
+ *
+ * 语言切换按钮属于「展开态」的内容（和分区导航、标志全称一起淡出）：
+ * 收起后的小结只留最要紧的动作，宽度也刚好容得下 —— 首次访问的人是在页面
+ * 顶部、胶囊展开时决定语言的。滚到底还能用页脚里的那一排语言胶囊。
  */
 export default function Navbar() {
+  const { dict } = useI18n();
   const collapsedByScroll = useScrollCollapsed();
   const past = useScrollPast(480);
   const hasHover = useHasHover();
@@ -30,12 +37,14 @@ export default function Navbar() {
   // 刚点过导航项：光标通常还停在胶囊上，这一次的 hover 不该把展开态按住。
   // 等光标离开（或重新进入）后恢复正常。
   const [peekMuted, setPeekMuted] = createSignal(false);
+  // 语言菜单开着时不许收起：菜单是跟着胶囊右边缘定位的，胶囊一缩菜单就跑了
+  const [langOpen, setLangOpen] = createSignal(false);
 
   // 键盘聚焦只在有 hover 的桌面端才算「临时展开」，否则手机上点一下按钮就会把胶囊撑开
   const peeking = createMemo(
     () => !peekMuted() && (hovered() || (keyboardFocus() && hasHover())),
   );
-  const collapsed = createMemo(() => collapsedByScroll() && !peeking());
+  const collapsed = createMemo(() => collapsedByScroll() && !peeking() && !langOpen());
 
   const handleFocusIn = (event: FocusEvent) => {
     const target = event.target;
@@ -81,8 +90,13 @@ export default function Navbar() {
 
   return (
     <div class="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-3 sm:pt-5">
-      <nav
-        aria-label="主导航"
+      {/*
+        胶囊与语言菜单共用一个定位容器：菜单挂在胶囊的右边缘下方。
+        菜单不能放进 <nav> 里 —— 胶囊要 overflow-hidden 才能做收起动画，
+        放里面会被一起裁掉。
+      */}
+      <div
+        class="pointer-events-auto relative"
         onMouseEnter={() => {
           setHovered(true);
           setPeekMuted(false);
@@ -95,108 +109,125 @@ export default function Navbar() {
         onPointerDown={() => setKeyboardFocus(false)}
         onFocusIn={handleFocusIn}
         onFocusOut={() => setKeyboardFocus(false)}
-        class={[
-          "pointer-events-auto glass relative flex h-14 items-center gap-1 overflow-hidden",
-          "border border-white/70 ring-1 ring-ink/5",
-          "transition-[max-width,border-radius,box-shadow,background-color,padding] duration-500",
-          "[transition-timing-function:cubic-bezier(0.34,1.4,0.5,1)]",
-          collapsed()
-            ? "max-w-[17rem] rounded-[1.75rem] px-2 shadow-island"
-            : "max-w-[58rem] rounded-[1.75rem] px-2.5 sm:px-3 shadow-island-scrolled",
-        ].join(" ")}
       >
-        {/* 标志：收起态只留图形 + X，鼠标悬停由整颗胶囊的展开来揭示全文 */}
-        <a
-          href="#top"
-          onClick={handleAnchorNav}
-          class="flex shrink-0 items-center gap-2.5 rounded-2xl px-1.5 py-1.5 transition-colors hover:bg-mint-100/70"
-          aria-label="ReaderX 首页"
-        >
-          <LogoMark size={collapsed() ? 28 : 32} class="transition-all duration-500" />
-          <Wordmark
-            fontSize={17}
-            class={[
-              "whitespace-nowrap transition-all duration-300",
-              collapsed() ? "max-w-0 -translate-x-1 opacity-0" : "max-w-[7rem] opacity-100",
-              "overflow-hidden",
-            ].join(" ")}
-          />
-        </a>
-
-        {/* 分区导航：只在展开态出现 */}
-        <ul
+        <nav
+          aria-label={dict().nav.ariaLabel}
           class={[
-            "hidden items-center gap-0.5 transition-all duration-300 md:flex",
+            "glass relative flex h-14 items-center gap-1 overflow-hidden",
+            "border border-white/70 ring-1 ring-ink/5",
+            "transition-[max-width,border-radius,box-shadow,background-color,padding] duration-500",
+            "[transition-timing-function:cubic-bezier(0.34,1.4,0.5,1)]",
+            // 收起态的上限按**英文**最长的那种情况定：标志 + 回到顶部 + GitHub +
+            // 语言 + Download，实测约 297px（中文只要 254px，但上限是两种语言共用的）。
             collapsed()
-              ? "pointer-events-none max-w-0 -translate-x-2 opacity-0"
-              : "max-w-[34rem] opacity-100",
-            "overflow-hidden",
+              ? "max-w-[19rem] rounded-[1.75rem] px-2 shadow-island"
+              : "max-w-[58rem] rounded-[1.75rem] px-2.5 sm:px-3 shadow-island-scrolled",
           ].join(" ")}
         >
-          <For each={NAV_LINKS}>
-            {link => {
-              const id = link.href.slice(1);
-              const isActive = () => currentId() === id;
-              return (
-                <li>
-                  <a
-                    href={link.href}
-                    onClick={event => handleNavClick(id, event)}
-                    aria-current={isActive() ? "true" : undefined}
-                    class={[
-                      "block whitespace-nowrap rounded-full px-3.5 py-2 text-[0.9rem] font-medium transition-colors",
-                      isActive()
-                        ? "bg-mint-100 text-mint-800"
-                        : "text-ink-2 hover:bg-mint-50 hover:text-mint-700",
-                    ].join(" ")}
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              );
-            }}
-          </For>
-        </ul>
+          {/* 标志：收起态只留图形 + X，鼠标悬停由整颗胶囊的展开来揭示全文 */}
+          <a
+            href="#top"
+            onClick={handleAnchorNav}
+            class="flex shrink-0 items-center gap-2.5 rounded-2xl px-1.5 py-1.5 transition-colors hover:bg-mint-100/70"
+            aria-label={dict().nav.home}
+          >
+            <LogoMark size={collapsed() ? 28 : 32} class="transition-all duration-500" />
+            <Wordmark
+              fontSize={17}
+              class={[
+                "whitespace-nowrap transition-all duration-300",
+                collapsed() ? "max-w-0 -translate-x-1 opacity-0" : "max-w-[7rem] opacity-100",
+                "overflow-hidden",
+              ].join(" ")}
+            />
+          </a>
 
-        <div class="mx-1 hidden h-6 w-px shrink-0 bg-ink/10 md:block" />
-
-        <div class="ml-auto flex shrink-0 items-center gap-1">
-          {/* 回到顶部：滚过首屏后淡入 */}
-          <button
-            type="button"
-            onClick={scrollToTop}
-            aria-label="回到顶部"
+          {/*
+            分区导航：只在展开态出现。
+            断点用 lg 而不是 md：英文的「Features / Screens / Book sources /
+            Download / FAQ」比中文宽得多，768–1024 这一段塞进去会顶破胶囊、
+            溢出屏幕（中文在 md 下是放得下的，但断点是两种语言共用的）。
+          */}
+          <ul
             class={[
-              "hidden h-9 items-center justify-center rounded-full text-ink-2 transition-all hover:bg-mint-50 hover:text-mint-700 sm:flex",
-              past() ? "w-9 opacity-100" : "pointer-events-none w-0 opacity-0",
+              "hidden items-center gap-0.5 transition-all duration-300 lg:flex",
+              collapsed()
+                ? "pointer-events-none max-w-0 -translate-x-2 opacity-0"
+                : "max-w-[34rem] opacity-100",
+              "overflow-hidden",
             ].join(" ")}
           >
-            <ArrowDownIcon size={17} class="rotate-180" />
-          </button>
+            <For each={NAV_LINKS}>
+              {link => {
+                const isActive = () => currentId() === link.id;
+                return (
+                  <li>
+                    <a
+                      href={link.href}
+                      onClick={event => handleNavClick(link.id, event)}
+                      aria-current={isActive() ? "true" : undefined}
+                      class={[
+                        "block whitespace-nowrap rounded-full px-3.5 py-2 text-[0.9rem] font-medium transition-colors",
+                        isActive()
+                          ? "bg-mint-100 text-mint-800"
+                          : "text-ink-2 hover:bg-mint-50 hover:text-mint-700",
+                      ].join(" ")}
+                    >
+                      {dict().nav.sections[link.id]}
+                    </a>
+                  </li>
+                );
+              }}
+            </For>
+          </ul>
 
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="在 GitHub 上查看源码"
-            class="hidden h-9 w-9 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-mint-50 hover:text-mint-700 sm:flex"
-          >
-            <GitHubIcon size={18} />
-          </a>
+          <div class="mx-1 hidden h-6 w-px shrink-0 bg-ink/10 lg:block" />
 
-          <a
-            href="#download"
-            onClick={event => {
-              handleScrollNav(event);
-              handleAnchorNav(event);
-            }}
-            class="group flex items-center gap-1.5 rounded-full bg-mint-600 py-2 pl-3.5 pr-4 text-[0.9rem] font-semibold text-white shadow-[0_6px_18px_-6px_rgba(38,128,81,0.65)] transition-colors hover:bg-mint-700"
-          >
-            <DownloadIcon size={16} class="transition-transform group-hover:translate-y-px" />
-            <span class="whitespace-nowrap">下载</span>
-          </a>
-        </div>
-      </nav>
+          <div class="ml-auto flex shrink-0 items-center gap-1">
+            {/* 回到顶部：滚过首屏后淡入 */}
+            <button
+              type="button"
+              onClick={scrollToTop}
+              aria-label={dict().nav.backToTop}
+              class={[
+                "hidden h-9 items-center justify-center rounded-full text-ink-2 transition-all hover:bg-mint-50 hover:text-mint-700 sm:flex",
+                past() ? "w-9 opacity-100" : "pointer-events-none w-0 opacity-0",
+              ].join(" ")}
+            >
+              <ArrowDownIcon size={17} class="rotate-180" />
+            </button>
+
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={dict().nav.source}
+              class="hidden h-9 w-9 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-mint-50 hover:text-mint-700 sm:flex"
+            >
+              <GitHubIcon size={18} />
+            </a>
+
+            {/* 语言切换：中英互切，选择结果记在 Cookie 里 */}
+            <LanguageMenu
+              open={langOpen()}
+              onOpenChange={setLangOpen}
+              collapsed={collapsed()}
+            />
+
+            <a
+              href="#download"
+              onClick={event => {
+                handleScrollNav(event);
+                handleAnchorNav(event);
+              }}
+              class="group flex items-center gap-1.5 rounded-full bg-mint-600 py-2 pl-3.5 pr-4 text-[0.9rem] font-semibold text-white shadow-[0_6px_18px_-6px_rgba(38,128,81,0.65)] transition-colors hover:bg-mint-700"
+            >
+              <DownloadIcon size={16} class="transition-transform group-hover:translate-y-px" />
+              <span class="whitespace-nowrap">{dict().nav.download}</span>
+            </a>
+          </div>
+        </nav>
+      </div>
     </div>
   );
 }

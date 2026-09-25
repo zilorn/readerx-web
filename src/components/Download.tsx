@@ -14,6 +14,7 @@ import {
   type IconProps,
 } from "~/components/icons";
 import { PLATFORMS, RELEASES_URL, REPO_URL } from "~/data/site";
+import { useI18n } from "~/i18n";
 import { detectClientPlatform } from "~/lib/platform";
 import { useRequestPlatform } from "~/lib/platformClient";
 import {
@@ -21,18 +22,21 @@ import {
   formatCount,
   formatReleaseDate,
   resolvePlatformVariants,
+  type PlatformId,
   type PlatformMeta,
   type ResolvedVariant,
+  type VariantId,
 } from "~/lib/release";
 import { useRelease } from "~/lib/releaseClient";
 
-const PLATFORM_ICONS: Record<PlatformMeta["id"], (props: IconProps) => JSX.Element> = {
+const PLATFORM_ICONS: Record<PlatformId, (props: IconProps) => JSX.Element> = {
   android: AndroidIcon,
   windows: WindowsIcon,
   linux: LinuxIcon,
 };
 
 export default function Download() {
+  const { dict, t, locale } = useI18n();
   const releaseData = useRelease();
   /** 服务端按请求头判定、随 HTML 序列化过来的平台 */
   const platformHint = useRequestPlatform();
@@ -55,6 +59,21 @@ export default function Download() {
     () => PLATFORMS.find(platform => platform.id === activeId()) ?? PLATFORMS[0],
   );
 
+  /** 当前平台的系统要求 / 说明 / 安装提示：文案按 id 存在语言字典里 */
+  const platformText = () => dict().platforms[active().id];
+
+  /**
+   * 某份产物的一句话说明。
+   *
+   * 字典里按「平台 → 产物 id」存放，这里做一次字符串索引的宽化：
+   * 每个平台只列自己的那几种产物，所以联合类型没法直接用 `variant.id` 索引，
+   * 而「哪个产物属于哪个平台」由 `PLATFORMS`（`site.ts`）保证，查不到就是空串。
+   */
+  const variantHint = (platformId: PlatformId, variantId: VariantId): string => {
+    const variants: Record<string, string> = dict().platforms[platformId].variants;
+    return variants[variantId] ?? "";
+  };
+
   /**
    * 版本号 / 体积 / 直链全部来自线上 Release（经路由 query 传到客户端）。
    * 没有数据时显示占位骨架，而不是回落到写死的版本号。
@@ -65,6 +84,27 @@ export default function Download() {
   const allVariants = createMemo(() => resolvePlatformVariants(assets() ?? [], PLATFORMS));
   const variants = createMemo<ResolvedVariant[]>(() => allVariants()[active().id] ?? []);
   const ready = () => releaseData() !== undefined;
+
+  /** 「当前版本 v0.2.0（2026-09-25 发布）…」整句取自字典，版本号单独加粗 */
+  const versionLine = () => {
+    const value = version();
+    if (!value) return dict().download.loadingDescription;
+    const date = formatReleaseDate(releaseData()?.release.publishedAt);
+    const sentence = date
+      ? t("versionWithDate", { version: value, date })
+      : t("versionNoDate", { version: value });
+    // 模板里写作 `v{version}`：连同前缀一起作为切分点，否则会多印一个 v
+    const token = `v${value}`;
+    const parts = sentence.split(token);
+    if (parts.length !== 2) return sentence;
+    return (
+      <>
+        {parts[0]}
+        <span class="font-semibold text-ink">{token}</span>
+        {parts[1]}
+      </>
+    );
+  };
 
   const tabClass = (id: PlatformMeta["id"]) =>
     [
@@ -79,19 +119,14 @@ export default function Download() {
       <div class="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
           <SectionHeading
-            eyebrow="下载"
-            title="选一份适合你设备的"
-            titleAccent={() => <span class="text-gradient-mint">安装包</span>}
+            eyebrow={dict().download.eyebrow}
+            title={dict().download.title}
+            titleAccent={() => (
+              <span class="text-gradient-mint">{dict().download.titleAccent}</span>
+            )}
             description={() => (
-              <Show
-                when={ready()}
-                fallback={<>正在获取最新版本信息，也可以直接前往 GitHub 下载。</>}
-              >
-                当前版本 <span class="font-semibold text-ink">v{version()}</span>
-                <Show when={formatReleaseDate(releaseData()?.release.publishedAt)}>
-                  {date => <>（{date()} 发布）</>}
-                </Show>
-                。Android 装 APK，桌面端按系统选安装包；书架、书源与设置都存在本机。
+              <Show when={ready()} fallback={<>{dict().download.loadingDescription}</>}>
+                {versionLine()}
               </Show>
             )}
           />
@@ -102,7 +137,7 @@ export default function Download() {
           <div class="mt-10 flex justify-center">
             <div
               role="tablist"
-              aria-label="选择操作系统"
+              aria-label={dict().download.tablistLabel}
               class="inline-flex flex-wrap justify-center gap-1 rounded-full border border-ink/8 bg-surface-2/70 p-1.5"
             >
               <For each={PLATFORMS}>
@@ -154,11 +189,11 @@ export default function Download() {
                     </Show>
                   </h3>
                   <p class="mt-1 max-w-xl text-[0.9rem] leading-relaxed text-ink-2">
-                    {active().summary}
+                    {platformText().summary}
                   </p>
                   <p class="mt-2 flex items-center gap-1.5 text-[0.8rem] font-medium text-mint-700">
                     <ShieldIcon size={13} />
-                    {active().requirement}
+                    {platformText().requirement}
                   </p>
                 </div>
               </div>
@@ -181,7 +216,7 @@ export default function Download() {
                               <span class="h-3 w-14 animate-pulse rounded-full bg-ink/10" />
                             </div>
                             <p class="mt-0.5 text-[0.84rem] leading-relaxed text-ink-2">
-                              {variant.hint}
+                              {variantHint(active().id, variant.id)}
                             </p>
                           </div>
                         </div>
@@ -221,14 +256,14 @@ export default function Download() {
                                 }}
                               >
                                 <CheckIcon size={10} />
-                                推荐
+                                {dict().download.recommended}
                               </span>
                               <span class="text-[0.78rem] font-medium text-ink-3">
-                                {variant.size ?? "本版本暂无"}
+                                {variant.size ?? dict().download.missingSize}
                               </span>
                             </div>
                             <p class="mt-0.5 text-[0.84rem] leading-relaxed text-ink-2">
-                              {variant.hint}
+                              {variantHint(active().id, variant.id)}
                             </p>
                           </div>
                         </div>
@@ -241,7 +276,7 @@ export default function Download() {
                           classList={{ "border-ink/10 text-ink-2": !variant.url }}
                         >
                           <DownloadIcon size={15} />
-                          {variant.url ? "下载" : "去 Releases"}
+                          {variant.url ? dict().download.download : dict().download.toReleases}
                         </a>
                       </li>
                     )}
@@ -251,14 +286,14 @@ export default function Download() {
             </ul>
 
             <div class="flex flex-col gap-3 border-t border-ink/6 bg-surface-2/50 px-6 py-4 text-[0.82rem] leading-relaxed text-ink-2 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-              <p>{active().note}</p>
+              <p>{platformText().note}</p>
               <a
                 href={releaseData()?.release.htmlUrl ?? RELEASES_URL}
                 target="_blank"
                 rel="noreferrer"
                 class="group inline-flex shrink-0 items-center gap-1.5 font-semibold text-mint-700 hover:text-mint-800"
               >
-                在 GitHub 查看本版本全部产物
+                {dict().download.viewAll}
                 <ArrowRightIcon
                   size={15}
                   class="transition-transform group-hover:translate-x-0.5"
@@ -275,7 +310,7 @@ export default function Download() {
               when={ready()}
               fallback={
                 <>
-                  <span>正在向 GitHub 查询最新版本…</span>
+                  <span>{dict().download.loadingShort}</span>
                   <a
                     href={RELEASES_URL}
                     target="_blank"
@@ -283,18 +318,27 @@ export default function Download() {
                     class="inline-flex items-center gap-1 font-semibold text-mint-700 hover:text-mint-800"
                   >
                     <RefreshIcon size={13} />
-                    直接去 Releases
+                    {dict().download.directReleases}
                   </a>
                 </>
               }
             >
-              <span>版本与体积实时取自 GitHub Releases</span>
+              <span>{dict().download.statsSource}</span>
               <Show when={releaseData()?.release.totalDownloads}>
-                {total => <span>累计下载 {formatCount(total())} 次</span>}
+                {total => (
+                  <span>
+                    {t("totalDownloads", {
+                      count: formatCount(total(), locale()) ?? String(total()),
+                    })}
+                  </span>
+                )}
               </Show>
               <Show when={availableCount(variants()) > 0}>
                 <span>
-                  本平台当前提供 {availableCount(variants())} / {active().variants.length} 份产物
+                  {t("platformVariants", {
+                    available: availableCount(variants()),
+                    total: active().variants.length,
+                  })}
                 </span>
               </Show>
             </Show>
@@ -304,22 +348,7 @@ export default function Download() {
         {/* 签名与常见提示 */}
         <Reveal delay={140}>
           <div class="mt-6 grid gap-4 sm:grid-cols-3">
-            <For
-              each={[
-                {
-                  title: "Android 已签名",
-                  body: "APK 已签名，覆盖安装即可升级；数据留在设备本地，升级不受影响。",
-                },
-                {
-                  title: "桌面包未做代码签名",
-                  body: "Windows 安装时可能出现 SmartScreen 提示，选择「仍要运行」即可；Linux 的 AppImage 需要自行 chmod +x。",
-                },
-                {
-                  title: "遇到问题？",
-                  body: "欢迎到 Issues 反馈，附上平台、设备型号与系统版本；应用内「设置 → 调试 → 应用日志」可直接导出日志。",
-                },
-              ]}
-            >
+            <For each={dict().download.tips}>
               {item => (
                 <div class="rounded-2xl border border-ink/8 bg-white p-5 shadow-soft">
                   <h4 class="text-[0.95rem] font-bold text-ink">{item.title}</h4>
@@ -336,9 +365,11 @@ export default function Download() {
             <div class="flex items-center gap-3.5 text-center sm:text-left">
               <GitHubIcon size={26} class="hidden shrink-0 text-ink sm:block" />
               <div>
-                <div class="text-[0.98rem] font-bold text-ink">ReaderX 是开源项目</div>
+                <div class="text-[0.98rem] font-bold text-ink">
+                  {dict().download.openSourceTitle}
+                </div>
                 <div class="mt-0.5 text-[0.86rem] text-ink-2">
-                  源码、书源规范文档与发版工作流都在 GitHub 上，欢迎 star 与 issue。
+                  {dict().download.openSourceBody}
                 </div>
               </div>
             </div>

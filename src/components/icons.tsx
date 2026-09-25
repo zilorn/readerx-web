@@ -281,6 +281,15 @@ export const SearchIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** 语言切换（地球） */
+export const GlobeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M2 12h20" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </Icon>
+);
+
 /** 内部链接 / 外部跳转箭头（右上） */
 export const ExternalIcon = (p: IconProps) => (
   <Icon {...p}>

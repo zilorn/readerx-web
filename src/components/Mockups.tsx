@@ -1,5 +1,6 @@
 import { For, Show } from "solid-js";
 import { LogoMark } from "~/components/Logo";
+import { useI18n } from "~/i18n";
 import {
   BookmarkIconS,
   ChevronLeftIconS,
@@ -38,7 +39,13 @@ import {
  * - 书源页是「书源管理」列表，每行左侧图标、名称 + 功能开关、右侧启用开关。
  *
  * 尺寸整体按手机列宽（480px）等比缩小，所以下面用 rem/pt 级别的值而不是应用的 px 值。
+ *
+ * 示意里的文案（页头、Tab、设置项、示例正文……）全部来自 `messages.mockups`：
+ * 它们**代表应用界面的样子**，所以按语言的「应用内口径」翻译，而不是官网自己的语气。
  */
+
+/** 书封上的格式角标：前三种是文件格式（各语言一样），在线来源要翻译 */
+type CoverFormat = "TXT" | "EPUB" | "PDF" | "online";
 
 /* ------------------------------------------------------------------ *
  * 应用配色（取自 readerx/src/index.css 的浅色主题）
@@ -115,7 +122,7 @@ function PhoneFrame(props: { children: any; class?: string }) {
  */
 function BookCover(props: {
   hue: number;
-  format: "TXT" | "EPUB" | "PDF" | "在线";
+  format: CoverFormat;
   /** 三条占位条的宽度（%）：前两条是书名，最后一条是作者 */
   bars: number[];
   showMeta?: boolean;
@@ -123,6 +130,7 @@ function BookCover(props: {
   percent?: number;
   finished?: boolean;
 }) {
+  const { dict, t } = useI18n();
   // 与 BookCover.tsx 完全相同的渐变口径：hue 与 hue+24，58%/52% 与 62%/34%
   const background = () =>
     `linear-gradient(165deg, hsl(${props.hue} 58% 52%), hsl(${(props.hue + 24) % 360} 62% 34%))`;
@@ -142,7 +150,7 @@ function BookCover(props: {
         {/* 顶部高光（应用里是 ::after 的 16% 白渐变） */}
         <span class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(255_255_255/0.16),transparent_34%)]" />
         <span class="absolute left-1 top-1 z-10 rounded-full bg-black/30 px-[3px] py-[1.5px] text-[5.5px] leading-none tracking-[0.08em]">
-          {props.format}
+          {props.format === "online" ? dict().mockups.formatOnline : props.format}
         </span>
         {/* 书名 / 作者：占位条 */}
         <span class="relative z-10 flex w-full flex-col items-center gap-[3px] px-1.5">
@@ -165,7 +173,9 @@ function BookCover(props: {
           class="truncate text-[7px] font-medium"
           style={{ color: props.finished ? SUCCESS : ACCENT }}
         >
-          {props.finished ? "已读完" : `读到 ${props.percent}%`}
+          {props.finished
+            ? dict().mockups.finished
+            : t("readingProgress", { percent: props.percent ?? 0 })}
         </span>
         <span
           class="h-[2px] w-full overflow-hidden rounded-[1px]"
@@ -235,17 +245,18 @@ function HeaderIconButton(props: { children: any }) {
 
 /** 底部主导航：三个 Tab（书架 / 发现 / 设置），激活态为强调色 */
 function TabBar(props: { active: "shelf" | "discover" | "settings" }) {
+  const { dict } = useI18n();
   const items = [
-    { id: "shelf", label: "书架", Icon: ShelfIconS },
-    { id: "discover", label: "发现", Icon: CompassIconS },
-    { id: "settings", label: "设置", Icon: SettingsIconS },
+    { id: "shelf", Icon: ShelfIconS },
+    { id: "discover", Icon: CompassIconS },
+    { id: "settings", Icon: SettingsIconS },
   ] as const;
 
   return (
     <nav
       class="mt-auto flex flex-none px-1.5 pb-3 pt-1"
       style={{ "border-top": `1px solid ${BORDER}`, background: SURFACE }}
-      aria-label="主导航"
+      aria-label={dict().mockups.tabbarLabel}
     >
       <For each={items}>
         {(item) => (
@@ -260,7 +271,7 @@ function TabBar(props: { active: "shelf" | "discover" | "settings" }) {
               class="text-[7px] font-medium tracking-[0.02em]"
               style={{ color: props.active === item.id ? ACCENT : INK_3 }}
             >
-              {item.label}
+              {dict().mockups.tabs[item.id]}
             </span>
           </span>
         )}
@@ -291,11 +302,13 @@ function FilterChip(props: { label: string; count: number; active?: boolean }) {
 }
 
 function ShelfPane() {
+  const { dict, t } = useI18n();
+
   return (
     <div class="flex h-full flex-col" style={{ background: BG }}>
       <AppHeader
-        title="书架"
-        subtitle="24 本在架"
+        title={dict().mockups.shelfTitle}
+        subtitle={t("shelfSubtitle", { count: 24 })}
         right={
           <div class="flex flex-none items-center gap-1">
             <HeaderIconButton>
@@ -309,10 +322,10 @@ function ShelfPane() {
       >
         {/* 分组筛选条：横向滚动 */}
         <div class="flex gap-1.5 overflow-hidden px-3.5 pb-1.5 pt-1">
-          <FilterChip label="全部" count={24} active />
-          <FilterChip label="本地" count={18} />
-          <FilterChip label="WebDAV" count={4} />
-          <FilterChip label="在线" count={2} />
+          <FilterChip label={dict().mockups.filters.all} count={24} active />
+          <FilterChip label={dict().mockups.filters.local} count={18} />
+          <FilterChip label={dict().mockups.filters.webdav} count={4} />
+          <FilterChip label={dict().mockups.filters.online} count={2} />
         </div>
       </AppHeader>
 
@@ -362,7 +375,7 @@ function ShelfPane() {
         />
         <BookCover
           hue={96}
-          format="在线"
+          format="online"
           bars={[68, 50, 36]}
           showMeta
           percent={23}
@@ -430,6 +443,8 @@ function ReaderParagraph(props: {
  * 下方一行小字是音色与倍速。
  */
 function TtsBubble() {
+  const { dict } = useI18n();
+
   return (
     <div class="flex select-none flex-col items-end">
       <div
@@ -473,7 +488,7 @@ function TtsBubble() {
         class="mt-1 pr-0.5 text-[6.5px] leading-none"
         style={{ color: INK_3 }}
       >
-        原生语音 · 1.25x
+        {dict().mockups.ttsVoice}
       </span>
     </div>
   );
@@ -484,30 +499,26 @@ function TtsBubble() {
  * 菜单收起时没有顶栏 —— 点屏幕中间才滑出工具栏。听书时右下角是悬浮球。
  */
 function ReaderPane() {
+  const { dict, t } = useI18n();
+
   return (
     <div class="relative flex h-full flex-col" style={{ background: PAPER }}>
       <div class="flex flex-1 flex-col px-3.5 pt-3">
         {/* 章节标题行：应用里正文顶部就是章节名，没有额外顶栏 */}
         <div class="mb-2 flex items-baseline justify-between">
           <span class="text-[8px] font-semibold" style={{ color: "#8b8069" }}>
-            第三章
+            {dict().mockups.chapterTitle}
           </span>
           <span class="text-[7px]" style={{ color: "#a99c82" }}>
-            第 3/48 章
+            {t("chapterOf", { index: 3, total: 48 })}
           </span>
         </div>
 
         {/* 正文：默认 24px / 行高 1.95 → 按缩小比例写作 8.5px / 1.95 */}
         <div class="space-y-[7px]">
-          <ReaderParagraph>
-            窗外的雨落了一整夜，檐角的水声滴答，像是有人在极轻地翻动书页。她把灯芯拨亮了些，光晕便落在摊开的册子上，纸页边缘泛出温润的黄。
-          </ReaderParagraph>
-          <ReaderParagraph speak>
-            那些被时间压皱的字迹，一行行舒展开来，像是终于等到了读它的人。
-          </ReaderParagraph>
-          <ReaderParagraph bookmark>
-            “你还在看那本？”身后有人问。她没有回头，只把册子往灯下推了推。
-          </ReaderParagraph>
+          <ReaderParagraph>{dict().mockups.paragraphs.plain}</ReaderParagraph>
+          <ReaderParagraph speak>{dict().mockups.paragraphs.speaking}</ReaderParagraph>
+          <ReaderParagraph bookmark>{dict().mockups.paragraphs.bookmarked}</ReaderParagraph>
         </div>
       </div>
 
@@ -523,7 +534,7 @@ function ReaderPane() {
         class="flex items-center justify-between px-3.5 py-1.5 text-[6.5px] leading-none"
         style={{ color: "#a99c82", "border-top": `1px solid #ece2cf` }}
       >
-        <span>第三章</span>
+        <span>{dict().mockups.chapterTitle}</span>
         <span>64% · 22:14</span>
       </div>
     </div>
@@ -590,10 +601,13 @@ function ResultRow(props: {
  * 再下面是搜索框（右侧橙色搜索按钮）与结果卡片。
  */
 function DiscoverPane() {
+  const { dict, t } = useI18n();
+  const sources = () => dict().mockups.sourceNames;
+
   return (
     <div class="flex h-full flex-col" style={{ background: BG }}>
       <AppHeader
-        title="发现"
+        title={dict().mockups.discoverTitle}
         right={
           <HeaderIconButton>
             <SourceIconS size={12} />
@@ -614,13 +628,13 @@ function DiscoverPane() {
                 "box-shadow": "0 1px 2px rgb(0 0 0 / 0.10)",
               }}
             >
-              搜索
+              {dict().mockups.modeSearch}
             </span>
             <span
               class="flex-1 rounded-[5px] py-[3px] text-center text-[8px]"
               style={{ color: INK_2 }}
             >
-              发现
+              {dict().mockups.modeDiscover}
             </span>
           </div>
         </div>
@@ -635,7 +649,7 @@ function DiscoverPane() {
           >
             <SearchIconS size={10} />
             <span class="text-[8px]" style={{ color: INK_3 }}>
-              输入书名 / 作者…
+              {dict().mockups.searchPlaceholder}
             </span>
           </div>
           <span
@@ -653,9 +667,9 @@ function DiscoverPane() {
         >
           <For
             each={[
-              { bars: [62, 30, 46], source: "书源 A", hue: 142 },
-              { bars: [48, 38, 54], source: "书源 B", hue: 210 },
-              { bars: [70, 24, 40], source: "古籍库", hue: 32 },
+              { bars: [62, 30, 46], source: sources()[0], hue: 142 },
+              { bars: [48, 38, 54], source: sources()[1], hue: 210 },
+              { bars: [70, 24, 40], source: sources()[2], hue: 32 },
             ]}
           >
             {(row) => <ResultRow {...row} />}
@@ -663,7 +677,7 @@ function DiscoverPane() {
         </div>
 
         <p class="text-center text-[6.5px]" style={{ color: INK_3 }}>
-          3 条结果 · 点击查看详情并加入书架
+          {t("discoverResultCount", { count: 3 })}
         </p>
       </div>
 
@@ -749,23 +763,26 @@ function FontSizeControl() {
 }
 
 function SettingsPane() {
+  const { dict } = useI18n();
+  const rows = () => dict().mockups.rows;
+
   return (
     <div class="flex h-full flex-col" style={{ background: BG }}>
-      <AppHeader title="设置" />
+      <AppHeader title={dict().mockups.settingsTitle} />
 
       <div class="flex-1 overflow-hidden px-3.5 pt-1.5">
         {/* 外观：主题三选一（浅色 / 深色 / 护眼），选中的白底加粗 */}
-        <SettingsGroup label="外观">
-          <SettingRow label="主题">
+        <SettingsGroup label={dict().mockups.groups.appearance}>
+          <SettingRow label={rows().theme}>
             <div
               class="flex flex-none gap-[2px] rounded-[7px] p-[2px]"
               style={{ background: SURFACE_2 }}
             >
               <For
                 each={[
-                  { label: "浅色", dot: "#ffffff" },
-                  { label: "深色", dot: "#262c36" },
-                  { label: "护眼", dot: "#d9b98a" },
+                  { label: dict().mockups.themes.light, dot: "#ffffff" },
+                  { label: dict().mockups.themes.dark, dot: "#262c36" },
+                  { label: dict().mockups.themes.sepia, dot: "#d9b98a" },
                 ]}
               >
                 {(opt, index) => (
@@ -798,11 +815,11 @@ function SettingsPane() {
         </SettingsGroup>
 
         {/* 阅读：正文字号 / 段落间距 / 翻页方式 / 简繁转换 */}
-        <SettingsGroup label="阅读">
-          <SettingRow label="正文字号">
+        <SettingsGroup label={dict().mockups.groups.reading}>
+          <SettingRow label={rows().fontSize}>
             <FontSizeControl />
           </SettingRow>
-          <SettingRow label="段落间距">
+          <SettingRow label={rows().paragraphSpacing}>
             <div class="flex flex-none items-center gap-1.5">
               <span
                 class="h-[3px] w-[54px] rounded-full"
@@ -821,7 +838,7 @@ function SettingsPane() {
               </span>
             </div>
           </SettingRow>
-          <SettingRow label="翻页方式">
+          <SettingRow label={rows().pageTurn}>
             <div
               class="flex flex-none gap-[2px] rounded-[7px] p-[2px]"
               style={{ background: SURFACE_2 }}
@@ -830,24 +847,30 @@ function SettingsPane() {
                 class="rounded-[5px] px-1.5 py-[3px] text-[7.5px] font-semibold"
                 style={{ background: SURFACE, color: INK }}
               >
-                左右翻页
+                {dict().mockups.paging.horizontal}
               </span>
               <span
                 class="rounded-[5px] px-1.5 py-[3px] text-[7.5px]"
                 style={{ color: INK_2 }}
               >
-                上下滚动
+                {dict().mockups.paging.vertical}
               </span>
             </div>
           </SettingRow>
         </SettingsGroup>
 
         {/* 书源：管理入口 + 并发数 */}
-        <SettingsGroup label="书源">
-          <SettingRow label="书源管理" desc="管理在线书来源与书源功能开关">
+        <SettingsGroup label={dict().mockups.groups.sources}>
+          <SettingRow
+            label={rows().sourceManage}
+            desc={dict().mockups.sourceManageDesc}
+          >
             <ChevronRightIconS size={11} />
           </SettingRow>
-          <SettingRow label="书源并发" desc="一次搜索同时运行多少个书源">
+          <SettingRow
+            label={dict().mockups.sourceConcurrency}
+            desc={dict().mockups.sourceConcurrencyDesc}
+          >
             <div class="flex flex-none items-center gap-1">
               <span
                 class="grid h-5 w-5 place-items-center rounded-[5px] text-[8px] font-bold"
@@ -930,6 +953,8 @@ function SourceRow(props: {
 
 /** 书源管理列表卡片（用作 Showcase 里的「书源」视觉块） */
 export function SourceListCard(props: { class?: string }) {
+  const { dict, t } = useI18n();
+
   return (
     <div
       class={[
@@ -947,19 +972,21 @@ export function SourceListCard(props: { class?: string }) {
       >
         <SourceIconS size={12} />
         <span class="text-[11px] font-semibold" style={{ color: INK }}>
-          书源管理
+          {dict().mockups.sourceListTitle}
         </span>
         <span
           class="ml-auto flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
           style={{ background: ACCENT_WEAK, color: ACCENT }}
         >
-          3 个已启用
+          {t("sourceEnabledCount", { count: 3 })}
         </span>
       </div>
       <div class="divide-y" style={{ "border-color": BORDER }}>
-        <SourceRow name="XX源" caps="搜索 发现 详情 目录 正文" on />
-        <SourceRow name="XX阁" caps="搜索 目录 正文" on />
-        <SourceRow name="XX库" caps="搜索 详情 目录" on />
+        <For each={dict().mockups.sourceRows}>
+          {row => (
+            <SourceRow name={row.name} caps={row.caps} on />
+          )}
+        </For>
       </div>
     </div>
   );
@@ -1019,6 +1046,8 @@ export function PhoneSettings(props: { class?: string }) {
  * 品牌块是橙到深橙的渐变。
  */
 export function DesktopWindow(props: { class?: string }) {
+  const { dict } = useI18n();
+
   return (
     <div
       class={[
@@ -1045,7 +1074,7 @@ export function DesktopWindow(props: { class?: string }) {
                 ReaderX
               </span>
               <span class="text-[6.5px]" style={{ color: INK_3 }}>
-                本地书管理
+                {dict().mockups.desktopBrandSubtitle}
               </span>
             </span>
             <span
@@ -1058,10 +1087,10 @@ export function DesktopWindow(props: { class?: string }) {
 
           <For
             each={[
-              { label: "书架", Icon: ShelfIconS, active: false },
-              { label: "发现", Icon: CompassIconS, active: true },
-              { label: "设置", Icon: SettingsIconS, active: false },
-            ]}
+              { id: "shelf", Icon: ShelfIconS, active: false },
+              { id: "discover", Icon: CompassIconS, active: true },
+              { id: "settings", Icon: SettingsIconS, active: false },
+            ] as const}
           >
             {(item) => (
               <span
@@ -1073,7 +1102,7 @@ export function DesktopWindow(props: { class?: string }) {
                 }
               >
                 <item.Icon size={11} />
-                {item.label}
+                {dict().mockups.tabs[item.id]}
               </span>
             )}
           </For>
@@ -1090,6 +1119,9 @@ export function DesktopWindow(props: { class?: string }) {
 
 /** 桌面内容区里的发现页（复用分段 + 搜索 + 结果，只是不挂底部 Tab） */
 function DiscoverContent() {
+  const { dict } = useI18n();
+  const sources = () => dict().mockups.sourceNames;
+
   return (
     <>
       <div
@@ -1103,7 +1135,7 @@ function DiscoverContent() {
           class="text-[13px] font-bold tracking-[0.02em]"
           style={{ color: INK }}
         >
-          发现
+          {dict().mockups.discoverTitle}
         </h1>
         <span
           class="ml-auto grid h-6 w-6 place-items-center rounded-[7px]"
@@ -1126,13 +1158,13 @@ function DiscoverContent() {
               "box-shadow": "0 1px 2px rgb(0 0 0 / 0.10)",
             }}
           >
-            搜索
+            {dict().mockups.modeSearch}
           </span>
           <span
             class="flex-1 rounded-[5px] py-[3px] text-center text-[8px]"
             style={{ color: INK_2 }}
           >
-            发现
+            {dict().mockups.modeDiscover}
           </span>
         </div>
 
@@ -1143,7 +1175,7 @@ function DiscoverContent() {
           >
             <SearchIconS size={10} />
             <span class="text-[8px]" style={{ color: INK_3 }}>
-              输入书名 / 作者…
+              {dict().mockups.searchPlaceholder}
             </span>
           </div>
           <span
@@ -1160,10 +1192,10 @@ function DiscoverContent() {
         >
           <For
             each={[
-              { bars: [62, 30, 46], source: "书源 A", hue: 142 },
-              { bars: [48, 38, 54], source: "书源 B", hue: 210 },
-              { bars: [70, 24, 40], source: "古籍库", hue: 32 },
-              { bars: [52, 34, 48], source: "书源 A", hue: 336 },
+              { bars: [62, 30, 46], source: sources()[0], hue: 142 },
+              { bars: [48, 38, 54], source: sources()[1], hue: 210 },
+              { bars: [70, 24, 40], source: sources()[2], hue: 32 },
+              { bars: [52, 34, 48], source: sources()[0], hue: 336 },
             ]}
           >
             {(row) => <ResultRow {...row} />}
