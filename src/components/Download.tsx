@@ -14,6 +14,8 @@ import {
   type IconProps,
 } from "~/components/icons";
 import { PLATFORMS, RELEASES_URL, REPO_URL } from "~/data/site";
+import { detectClientPlatform } from "~/lib/platform";
+import { useRequestPlatform } from "~/lib/platformClient";
 import {
   availableCount,
   formatCount,
@@ -30,19 +32,24 @@ const PLATFORM_ICONS: Record<PlatformMeta["id"], (props: IconProps) => JSX.Eleme
   linux: LinuxIcon,
 };
 
-/** 判断用户当前打开官网用的系统，默认选中对应平台 */
-function detectPlatform(): PlatformMeta["id"] {
-  if (typeof navigator === "undefined") return "android";
-  const ua = navigator.userAgent;
-  if (/Android/i.test(ua)) return "android";
-  if (/Windows/i.test(ua)) return "windows";
-  if (/Linux|X11/i.test(ua)) return "linux";
-  return "android";
-}
-
 export default function Download() {
   const releaseData = useRelease();
-  const [activeId, setActiveId] = createSignal<PlatformMeta["id"]>(detectPlatform());
+  /** 服务端按请求头判定、随 HTML 序列化过来的平台 */
+  const platformHint = useRequestPlatform();
+  /** 用户点过 tab 之后以点击为准 */
+  const [picked, setPicked] = createSignal<PlatformMeta["id"]>();
+
+  /**
+   * 首屏高亮的平台。
+   *
+   * 顺序很重要：`picked()`（用户点的）→ `platformHint()`（服务端按 UA 判的，两边同一个值）
+   * → `detectClientPlatform()`（浏览器里自己判，仅在服务端值还没到手时用一下）。
+   *
+   * 之前直接用 `navigator.userAgent` 初始化，服务端渲染出来永远是 Android，
+   * 客户端却认为是 Windows；水合阶段 Solid 跳过 DOM 写入，于是 Android 一直高亮，
+   * 点 Windows 也不会变（值相同、没有重渲染）。
+   */
+  const activeId = () => picked() ?? platformHint() ?? detectClientPlatform();
 
   const active = createMemo(
     () => PLATFORMS.find(platform => platform.id === activeId()) ?? PLATFORMS[0],
@@ -106,7 +113,7 @@ export default function Download() {
                       type="button"
                       role="tab"
                       aria-selected={activeId() === platform.id}
-                      onClick={() => setActiveId(platform.id)}
+                      onClick={() => setPicked(platform.id)}
                       class={tabClass(platform.id)}
                     >
                       <Icon size={17} />
