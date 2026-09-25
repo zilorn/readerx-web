@@ -653,8 +653,8 @@ function DiscoverPane() {
         >
           <For
             each={[
-              { bars: [62, 30, 46], source: "起点源", hue: 142 },
-              { bars: [48, 38, 54], source: "笔趣阁", hue: 210 },
+              { bars: [62, 30, 46], source: "书源 A", hue: 142 },
+              { bars: [48, 38, 54], source: "书源 B", hue: 210 },
               { bars: [70, 24, 40], source: "古籍库", hue: 32 },
             ]}
           >
@@ -1160,10 +1160,10 @@ function DiscoverContent() {
         >
           <For
             each={[
-              { bars: [62, 30, 46], source: "起点源", hue: 142 },
-              { bars: [48, 38, 54], source: "笔趣阁", hue: 210 },
+              { bars: [62, 30, 46], source: "书源 A", hue: 142 },
+              { bars: [48, 38, 54], source: "书源 B", hue: 210 },
               { bars: [70, 24, 40], source: "古籍库", hue: 32 },
-              { bars: [52, 34, 48], source: "起点源", hue: 336 },
+              { bars: [52, 34, 48], source: "书源 A", hue: 336 },
             ]}
           >
             {(row) => <ResultRow {...row} />}
