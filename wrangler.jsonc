@@ -1,0 +1,26 @@
+/**
+ * Cloudflare Worker 配置 —— 部署走 CF 后台的 Git 集成构建（Workers Builds）：
+ *   Build command:  pnpm build:cloudflare
+ *   Deploy command: npx wrangler deploy
+ *
+ * main / assets 指向 Nitro 构建产物（`NITRO_PRESET=cloudflare_module` 的输出）。
+ * 首次部署前需先跑一次 `pnpm build:cloudflare`，否则这些路径不存在。
+ *
+ * 本文件是唯一一份 wrangler 配置：Nitro 的自动生成已关闭（见 nitro.config.ts），
+ * 避免本地多出一份会遮蔽本文件、导致「本地能部署、CI 不能」的差异。
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "readerx-web",
+  "main": ".output/server/index.mjs",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".output/public"
+  },
+  "compatibility_date": "2026-09-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "no_bundle": true,
+  "rules": [
+    { "type": "ESModule", "globs": ["**/*.mjs", "**/*.js"] }
+  ]
+}
