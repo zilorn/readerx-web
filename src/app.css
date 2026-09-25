@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+/* 官网只有浅色主题：屏蔽 Tailwind v4 默认的 prefers-color-scheme 暗色变体，
+   避免系统处于深色模式时把页面元素翻成深色。 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   ReaderX 官网设计令牌
+   浅色底 + 浅绿强调色（与 App 内部 --success 同源）
+   ============================================================ */
+@theme {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-ink: #16211a;
+  --color-ink-2: #5c6b62;
+  --color-ink-3: #8e9c93;
+  --color-mint-50: #f2faf5;
+  --color-mint-100: #e2f5e8;
+  --color-mint-200: #c8ebd4;
+  --color-mint-300: #a3dcba;
+  --color-mint-400: #6fc894;
+  --color-mint-500: #3fb877;
+  --color-mint-600: #2f9e62;
+  --color-mint-700: #268051;
+  --color-mint-800: #1f6642;
+  --color-ember-500: #e8590c;
+  --color-ember-600: #c2410c;
+
+  --shadow-island:
+    0 1px 2px rgba(22, 33, 26, 0.04), 0 8px 24px -6px rgba(22, 33, 26, 0.1);
+  --shadow-island-scrolled:
+    0 1px 2px rgba(22, 33, 26, 0.05), 0 16px 40px -10px rgba(22, 33, 26, 0.18);
+  --shadow-soft:
+    0 1px 2px rgba(22, 33, 26, 0.03), 0 12px 32px -12px rgba(22, 33, 26, 0.12);
+  --shadow-lift:
+    0 2px 4px rgba(22, 33, 26, 0.04), 0 24px 48px -16px rgba(31, 102, 66, 0.22);
+
+  --animate-caret: caret-blink 1.05s steps(1, end) infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-ring: ring-pulse 2.4s ease-out infinite;
+  --animate-rise: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ============================================================
+   基础
+   ============================================================ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    /* 锚点跳转时给灵动岛导航留出高度 */
+    scroll-padding-top: 6.5rem;
+  }
+
+  body {
+    background-color: #fbfdfb;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--color-mint-200);
+    color: var(--color-mint-800);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-mint-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+}
+
+/* ============================================================
+   组件级工具类
+   ============================================================ */
+
+/* 页面底色：极浅的绿色光晕，避免整页死白 */
+@utility bg-aurora {
+  background-image:
+    radial-gradient(58rem 32rem at 12% -8%, rgba(111, 200, 148, 0.22), transparent 62%),
+    radial-gradient(46rem 30rem at 92% 4%, rgba(163, 220, 186, 0.26), transparent 60%),
+    radial-gradient(40rem 26rem at 50% 42%, rgba(226, 245, 232, 0.5), transparent 70%);
+}
+
+/* 细网格，给 hero 一点工程感 */
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(31, 102, 66, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 102, 66, 0.055) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+@utility mask-fade-b {
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+
+@utility text-gradient-mint {
+  background-image: linear-gradient(120deg, #268051 0%, #3fb877 45%, #6fc894 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* 灵动岛 / 卡片通用的玻璃拟态 */
+@utility glass {
+  background-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* ---------- 打字机 ---------- */
+.type-caret {
+  display: inline-block;
+  margin-left: 0.12em;
+  translate: 0 0.05em;
+  color: var(--color-mint-500);
+  /* 停顿期间淡出，重新开始输入时淡入 */
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.type-caret[data-blinking="true"] {
+  opacity: 1;
+  animation: var(--animate-caret);
+}
+
+/* ---------- 滚动进场 ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes ring-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 滚动条（桌面端） */
+@media (min-width: 1024px) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-mint-300) transparent;
+  }
+}
+
+/* ============================================================
+   降低动效偏好：关掉所有装饰性动画
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .type-caret {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,31 @@
+dist
+.wrangler
+.output
+.vercel
+.netlify
+.vinxi
+app.config.timestamp_*.js
+
+# Environment
+.env
+.env*.local
+
+# dependencies
+/node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+*.launch
+.settings/
+
+# Temp
+gitignore
+
+# 本地调试产物（截图、DOM dump、临时脚本）
+/.tmp
+
+# System Files
+.DS_Store
+Thumbs.db
