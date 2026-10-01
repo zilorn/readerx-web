@@ -16,6 +16,8 @@ export interface ReleaseAsset {
   size?: number;
   /** 直链 */
   url: string;
+  /** GitHub 原始下载地址；url 指向本站缓存下载入口 */
+  sourceUrl?: string;
   /** 累计下载次数 */
   downloads?: number;
 }

@@ -83,3 +83,19 @@ pnpm build:cloudflare && npx wrangler deploy   # 部署到 Cloudflare Workers
 ```
 
 应用仓库：<https://github.com/zilorn/readerx>
+
+## 下载文件预缓存（Cloudflare Workers）
+
+用户进入网页时，服务端使用 GitHub Releases API 检查最新稳定版本（无稳定版时使用预发布版），版本信息缓存 10 分钟以减少 GitHub 限流。获取版本后通过 Nitro 的 Cloudflare `waitUntil` 在后台预缓存该版本的安装包，三个文件一组，下载链接统一指向本站 `/api/download?tag=…&name=…`。
+
+下载接口只允许当前 Release API 返回的文件，不能代理任意 URL。命中时从 Cloudflare Cache API 返回文件；未命中时先完整写入缓存，再返回缓存文件。同一 Worker 实例中的并发填充会合并，安装包以流写入，不加载到内存。支持缓存文件的 Range 请求。缓存写入失败时由本站流式代理 GitHub 文件；GitHub 不可用时返回 502，用户可以重试或使用页面上的 GitHub Releases 入口。
+
+无需新增 R2、KV 或其他绑定，现有构建和部署命令即可使用。需要注意：
+
+- Cache API 是各 Cloudflare 数据中心独立的临时缓存，可能提前淘汰；缓存有效期为 24 小时，每次页面请求都会检查并补充缺失文件。
+- `waitUntil` 在响应结束后最多运行 30 秒，较大的文件可能无法在后台完成预缓存，后续下载会再次填充。并非永久保存、全球同步的文件镜像。
+- 单文件按普通 Cloudflare 套餐的 512 MiB 缓存上限处理，超过上限通过本站代理。
+- 版本更新后旧下载链接返回 404，需要刷新页面获取新版链接。
+- 本地 Node 开发环境没有 Cloudflare Cache API，会通过本站代理下载。实际缓存效果应在正式部署域名验证；本地模拟不代表线上缓存命中。
+
+验证：`pnpm test`、`pnpm build:cloudflare`。下载响应携带 `Content-Disposition` 和 `Content-Length`，不会缓存 GitHub 的错误响应。

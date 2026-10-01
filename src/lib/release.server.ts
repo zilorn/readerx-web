@@ -4,10 +4,12 @@
  * `GET /api/release` 与路由 `query`（`src/lib/releaseClient.ts`）共用这里的抓取与缓存，
  * 保证「版本号 / 体积 / 下载直链」全站同源，且同一进程内只打一次 GitHub。
  *
- * 缓存策略：命中 10 分钟内直接返回；过期后先回旧数据并在后台刷新
- * （stale-while-revalidate）；远端不可用且手里没有旧数据时才抛错，
+ * 缓存策略：命中 10 分钟内直接返回；过期后合并并发请求并等待刷新；
+ * 远端不可用时回退旧数据，手里没有旧数据时才抛错，
  * 由调用方决定是返回 `ok:false` 还是降级。
  */
+import { getRequestEvent } from "solid-js/web";
+import { downloadUrl, precacheRelease } from "~/lib/download.server";
 import {
   stripVersionPrefix,
   type ReleaseAsset,
@@ -192,9 +194,19 @@ export async function loadReleasePayload(): Promise<{
   fetchedAt: string;
   cached: boolean;
 }> {
+  // Capture request context before awaiting: Nitro binds this to Cloudflare waitUntil.
+  const request = getRequestEvent()?.nativeEvent.req;
   const entry = await getCacheEntry();
+  if (request?.waitUntil) request.waitUntil(precacheRelease(entry.release));
   return {
-    release: entry.release,
+    release: {
+      ...entry.release,
+      assets: entry.release.assets.map(asset => ({
+        ...asset,
+        sourceUrl: asset.url,
+        url: downloadUrl(entry.release.tag, asset.name),
+      })),
+    },
     fetchedAt: new Date(entry.fetchedAt).toISOString(),
     cached: Date.now() - entry.fetchedAt > 1000,
   };
