@@ -274,6 +274,7 @@ export default function Download() {
 
                         <a
                           href={variant.url ?? RELEASES_URL}
+                          download={variant.url ? variant.assetName ?? true : undefined}
                           target={variant.url ? undefined : "_blank"}
                           rel={variant.url ? undefined : "noreferrer"}
                           class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-mint-200 bg-white px-4 py-2 text-[0.85rem] font-semibold text-mint-700 transition-colors hover:border-mint-600 hover:bg-mint-600 hover:text-white"
