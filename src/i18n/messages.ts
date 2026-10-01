@@ -23,7 +23,7 @@ export const zh = {
   meta: {
     title: "ReaderX — 把整个书库装进口袋",
     description:
-      "ReaderX 是基于 Tauri 2 + SolidJS 的电子书阅读器：手机上是单手可用的移动端应用，桌面上是侧边导航的窗口应用。本地书架、JS 书源、双引擎听书、TXT / EPUB / PDF 导入，书架与阅读进度都存在本机。支持 Android、Windows 与 Linux。",
+      "ReaderX 是基于 Tauri 2 + SolidJS 的电子书阅读器：手机上是单手可用的移动端应用，桌面上是侧边导航的窗口应用。本地书架、JS 书源、双引擎听书、TXT / EPUB / MOBI / PDF 导入，书架与阅读进度都存在本机。支持 Android、Windows 与 Linux。",
   },
 
   lang: {
@@ -74,13 +74,13 @@ export const zh = {
     title: "该有的都有，",
     titleAccent: "不该有的一个都不加",
     description:
-      "从导入一本本地书，到追更一个连载站点，ReaderX 把整条阅读链路做在同一个应用里 —— 没有账号、没有广告、没有云同步的强绑定。",
+      "从导入一本本地书，到追更一个连载站点，ReaderX 把整条阅读链路做在同一个应用里 —— 无需账号、没有广告，还能在局域网内直接同步手机与电脑。",
     /** 键是 `FeatureId`：顺序与图标写在 `Features.tsx` 里 */
     items: {
       shelf: {
         title: "本地书架",
         description:
-          "书籍网格、继续阅读、阅读进度与书籍管理都在一个页面里。书库、书源、设置全部存在本机，不上传任何数据。",
+          "书籍网格、继续阅读、阅读进度与书籍管理都在一个页面里。书库、书源、设置保存在本机，需要时可与已配对的局域网设备同步。",
         tags: ["阅读进度", "本地存储"],
       },
       discover: {
@@ -104,8 +104,8 @@ export const zh = {
       import: {
         title: "四格式导入",
         description:
-          "TXT 按分章规则或约 3000 字自动分章；EPUB 还原目录；PDF 优先读文字层并按自带书签分章，扫描页整页渲染成图片阅读。",
-        tags: ["TXT", "EPUB", "PDF"],
+          "TXT 按分章规则或约 3000 字自动分章；EPUB / MOBI 还原目录；PDF 优先读文字层并按自带书签分章，扫描页整页渲染成图片阅读。",
+        tags: ["TXT", "EPUB", "MOBI", "PDF"],
       },
       offline: {
         title: "离线也不断",
@@ -121,6 +121,8 @@ export const zh = {
       "目录抽屉",
       "书签",
       "分章规则",
+      "局域网同步",
+      "ZIP 数据备份与恢复",
       "WebDAV 导入",
       "应用内网页登录",
       "替换规则",
@@ -184,10 +186,10 @@ export const zh = {
         eyebrow: "设置",
         title: "该在设置的都在设置里",
         description:
-          "主题、正文字号、段落间距、翻页方式、简繁转换、书源并发，加上 WebDAV 备份、缓存管理与应用日志导出 —— 一个设置页放完，不需要翻二级菜单。",
+          "主题、正文字号、段落间距、翻页方式、简繁转换、书源并发，加上局域网同步、ZIP 数据备份、缓存管理与应用日志导出；同步、数据与分章规则各有独立入口。",
         bullets: [
           "主题与阅读排版改动实时生效",
-          "WebDAV 备份 / 恢复，换机不丢进度",
+          "局域网设备同步，ZIP 备份支持合并或覆盖恢复",
           "应用日志可一键导出，反馈问题时附上",
         ],
       },
@@ -356,7 +358,7 @@ export const zh = {
       },
       {
         q: "我的书和阅读进度会上传到服务器吗？",
-        a: "不会。书架、书源、设置与阅读进度都存在设备本地，项目没有账号系统，也没有把书库上传到任何服务器的逻辑。在线阅读时只有书源规则自身发出的网络请求会离开设备。",
+        a: "ReaderX 没有账号系统，也不会把书库或阅读进度上传到项目服务器。数据默认保存在本机；开启局域网同步后，会与已配对的设备直接交换同步数据。在线书源、HTTP 语音源与 WebDAV 导入会连接你使用的相应服务。",
       },
       {
         q: "Android 最低支持什么版本？桌面端有什么额外能力？",
@@ -364,7 +366,7 @@ export const zh = {
       },
       {
         q: "手机和电脑之间能同步书库吗？",
-        a: "目前没有云同步，需要手动搬运：可以在桌面端用 WebDAV 导入把书取过来。阅读进度同样不做云端同步 —— 项目刻意不做账号体系，用「零上传」换掉这部分便利。",
+        a: "可以。在「设置 → 同步」中开启局域网同步，两台设备接入同一局域网后，通过配对码或设备发现连接。支持手动或定时自动同步书籍信息与正文、封面与插图、阅读进度、书签、目录、分组、书源及替换与分章规则，无需账号或云服务。双方修改发生冲突时，可逐条选择保留哪一份。换机或重装也可在「设置 → 数据」导出 ZIP 备份，再合并导入或覆盖恢复。",
       },
       {
         q: "导入的书源安全吗？",
@@ -382,7 +384,7 @@ export const zh = {
     description:
       "基于 Tauri 2 + SolidJS + TypeScript 的电子书阅读器。手机上是一个单手可用的移动端应用，桌面上是侧边导航的窗口应用，两者共用同一套页面与本地书库。",
     versionFallback: "最新版",
-    localBadge: "本地优先 · 零上传",
+    localBadge: "本地优先 · 局域网同步",
     navTitle: "导航",
     navAria: "站内导航",
     docsTitle: "文档",
@@ -478,7 +480,7 @@ export const en: Messages = {
   meta: {
     title: "ReaderX — Your entire library, in your pocket",
     description:
-      "ReaderX is an e-book reader built on Tauri 2 + SolidJS: a one-handed mobile app on your phone and a sidebar window app on your desktop. Local shelf, JS book sources, dual-engine text-to-speech, TXT / EPUB / PDF import — your shelf and reading progress stay on the device. Available for Android, Windows and Linux.",
+      "ReaderX is an e-book reader built on Tauri 2 + SolidJS: a one-handed mobile app on your phone and a sidebar window app on your desktop. Local shelf, JS book sources, dual-engine text-to-speech, TXT / EPUB / MOBI / PDF import — your shelf and reading progress stay on the device. Available for Android, Windows and Linux.",
   },
 
   lang: {
@@ -532,12 +534,12 @@ export const en: Messages = {
     title: "Everything you need,",
     titleAccent: "nothing you don't",
     description:
-      "From importing a local book to following an ongoing serial, ReaderX keeps the whole reading loop inside one app — no account, no ads, no cloud-sync lock-in.",
+      "From importing a local book to following an ongoing serial, ReaderX keeps the whole reading loop inside one app — no account, no ads, and direct sync between devices on your local network.",
     items: {
       shelf: {
         title: "Local bookshelf",
         description:
-          "Cover grid, continue-reading, progress and book management all on one page. Your library, sources and settings stay on the device — nothing is uploaded.",
+          "Cover grid, continue-reading, progress and book management all on one page. Your library, sources and settings are stored locally, with optional sync to paired devices on your local network.",
         tags: ["Reading progress", "Local storage"],
       },
       discover: {
@@ -561,8 +563,8 @@ export const en: Messages = {
       import: {
         title: "Four import formats",
         description:
-          "TXT is split by your chapter rules or roughly every 3,000 characters; EPUB restores the table of contents; PDF reads the text layer first and follows its own bookmarks, while scanned pages are rendered as images.",
-        tags: ["TXT", "EPUB", "PDF"],
+          "TXT is split by your chapter rules or roughly every 3,000 characters; EPUB / MOBI restore the table of contents; PDF reads the text layer first and follows its own bookmarks, while scanned pages are rendered as images.",
+        tags: ["TXT", "EPUB", "MOBI", "PDF"],
       },
       offline: {
         title: "Offline, uninterrupted",
@@ -578,6 +580,8 @@ export const en: Messages = {
       "Table-of-contents drawer",
       "Bookmarks",
       "Chapter-split rules",
+      "Local network sync",
+      "ZIP backup and restore",
       "WebDAV import",
       "In-app web login",
       "Text replacement rules",
@@ -640,10 +644,10 @@ export const en: Messages = {
         eyebrow: "Settings",
         title: "Everything configurable lives in Settings",
         description:
-          "Theme, body font size, paragraph spacing, page-turn mode, Chinese simplified/traditional conversion, source concurrency, plus WebDAV backup, cache management and log export — all on one page, with no sub-menus to dig through.",
+          "Theme, body font size, paragraph spacing, page-turn mode, Chinese simplified/traditional conversion, source concurrency, plus local network sync, ZIP backups, cache management and log export. Sync, data and chapter rules have dedicated entries.",
         bullets: [
           "Theme and layout changes apply instantly",
-          "WebDAV backup and restore, so a new device keeps your progress",
+          "Local network sync and ZIP backups with merge or full restore",
           "Export app logs in one tap and attach them to a bug report",
         ],
       },
@@ -803,7 +807,7 @@ export const en: Messages = {
       },
       {
         q: "Are my books and reading progress uploaded anywhere?",
-        a: "No. Your shelf, sources, settings and reading progress are stored locally; there is no account system and no code that uploads a library to any server. While reading online, only the requests made by the source rules themselves leave your device.",
+        a: "ReaderX has no account system and does not upload your library or reading progress to project servers. Data is stored locally by default; enabling local network sync exchanges data directly with paired devices. Online book sources, HTTP speech sources and WebDAV imports connect to the services you use.",
       },
       {
         q: "What is the minimum Android version, and what does the desktop add?",
@@ -811,7 +815,7 @@ export const en: Messages = {
       },
       {
         q: "Can I sync my library between phone and computer?",
-        a: "There is no cloud sync — move things by hand: use WebDAV import on the desktop to pull books over. Reading progress is not synced either; the project deliberately has no account system, trading that convenience for zero uploads.",
+        a: "Yes. Enable local network sync in Settings → Sync, connect both devices to the same local network, then pair them using a code or device discovery. Manually sync or set an automatic interval for book metadata and text, covers and illustrations, reading progress, bookmarks, contents, groups, sources, replacement rules and chapter rules. No account or cloud service is needed. Conflicting edits can be resolved individually. For a new device or reinstall, export a ZIP backup from Settings → Data, then merge it or perform a full restore.",
       },
       {
         q: "Are imported book sources safe?",
@@ -830,7 +834,7 @@ export const en: Messages = {
     description:
       "An e-book reader built with Tauri 2 + SolidJS + TypeScript: a one-handed mobile app on the phone, a sidebar window app on the desktop, sharing the same pages and the same local library.",
     versionFallback: "Latest",
-    localBadge: "Local-first · zero uploads",
+    localBadge: "Local-first · local network sync",
     navTitle: "Navigation",
     navAria: "Site navigation",
     docsTitle: "Docs",
